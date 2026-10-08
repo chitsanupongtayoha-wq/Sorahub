@@ -933,6 +933,8 @@ do
 	local humSet = {}   -- [Humanoid] = true
 	local ext = {}      -- [Humanoid] = {part = Part, root = BasePart}
 	local realStore = {} -- [BasePart] = ค่าเดิม (โหมดขยายตัวจริง)
+	local deadHum = setmetatable({}, {__mode = "k"}) -- Humanoid ที่ตายแล้ว (ห้ามสร้าง hitbox ซ้ำ)
+	local hooked = {}   -- [Humanoid] = {Connection...}
 	local addConn = nil
 	local scanToken = 0
 
@@ -970,7 +972,7 @@ do
 		if not model or not model:IsA("Model") then return false end
 		local myChar = player.Character
 		if myChar and (model == myChar or model:IsDescendantOf(myChar)) then return false end
-		if hum.Health <= 0 then return false end
+		if deadHum[hum] or hum.Health <= 0 or hum:GetState() == Enum.HumanoidStateType.Dead then return false end
 		if Players:GetPlayerFromCharacter(model) then
 			return hitboxPlayers
 		end
@@ -1053,13 +1055,51 @@ do
 		end
 	end
 
+	-- ปล่อย hitbox ของตัวนี้ทันที (ลบพาร์ทเสริม / คืนขนาดเดิม)
+	local function releaseHum(hum)
+		removeExt(hum)
+		local m = hum.Parent
+		local r = m and pickPart(m)
+		if r then restoreReal(r) end
+	end
+
+	local function unhook(hum)
+		local cs = hooked[hum]
+		if cs then
+			for _, c in ipairs(cs) do c:Disconnect() end
+			hooked[hum] = nil
+		end
+	end
+
+	local function hookHum(hum)
+		if hooked[hum] then return end
+		local function onDead()
+			deadHum[hum] = true
+			releaseHum(hum)
+		end
+		hooked[hum] = {
+			hum.Died:Connect(onDead),
+			hum:GetPropertyChangedSignal("Health"):Connect(function()
+				if hum.Health <= 0 then onDead() end
+			end),
+			hum.StateChanged:Connect(function(_, new)
+				if new == Enum.HumanoidStateType.Dead then onDead() end
+			end),
+		}
+	end
+
 	local function addHum(inst)
-		if inst:IsA("Humanoid") then humSet[inst] = true end
+		if inst:IsA("Humanoid") then
+			humSet[inst] = true
+			hookHum(inst)
+		end
 	end
 
 	local function restoreAll()
 		for hum in pairs(ext) do removeExt(hum) end
 		for part in pairs(realStore) do restoreReal(part) end
+		for hum in pairs(hooked) do unhook(hum) end
+		table.clear(deadHum)
 	end
 
 	function setHitbox(on)
@@ -1103,6 +1143,7 @@ do
 			if not hum.Parent or not hum:IsDescendantOf(workspace) then
 				humSet[hum] = nil
 				removeExt(hum)
+				unhook(hum)
 			else
 				applyOne(hum)
 			end
