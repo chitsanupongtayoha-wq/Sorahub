@@ -721,6 +721,11 @@ do
 				if g then skyPlatY = g + OPT.SKY_HEIGHT - 1 end
 			end
 			skyPlat.CFrame = CFrame.new(root.Position.X, skyPlatY, root.Position.Z)
+			-- ตกนุ่ม: จำกัดความเร็วตกไม่ให้เกิน 40 กันเกมที่มีดาเมจตกจากที่สูง
+			local vel = root.AssemblyLinearVelocity
+			if vel.Y < -40 then
+				root.AssemblyLinearVelocity = Vector3.new(vel.X, -40, vel.Z)
+			end
 			if root.Position.Y < skyPlatY - 40 then
 				root.AssemblyLinearVelocity = Vector3.zero
 				root.CFrame = CFrame.new(root.Position.X, skyPlatY + 4, root.Position.Z)
