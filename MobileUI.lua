@@ -2256,6 +2256,44 @@ do
 		return p + Vector2.new(OPT.CLICK_DX or 0, OPT.CLICK_DY or 0), o
 	end
 
+	-- หา ScrollingFrame ที่นิ้วลากอยู่ (VIM ลากเมาส์ไม่เลื่อนเมนูบนมือถือ เลยเลื่อนเองด้วย CanvasPosition)
+	local function findScroller(o, p)
+		if o then
+			if o:IsA("ScrollingFrame") then return o end
+			local a = o:FindFirstAncestorWhichIsA("ScrollingFrame")
+			if a and not a:IsDescendantOf(gui) then return a end
+		end
+		local best, bestArea = nil, math.huge
+		for _, f in ipairs(playerGui:GetDescendants()) do
+			if f:IsA("ScrollingFrame") and not f:IsDescendantOf(gui) and isShown(f) then
+				local size = f.AbsoluteSize
+				local c = objCenter(f)
+				if math.abs(p.X - c.X) <= size.X / 2 and math.abs(p.Y - c.Y) <= size.Y / 2 then
+					local area = size.X * size.Y
+					if area > 0 and area < bestArea then best, bestArea = f, area end
+				end
+			end
+		end
+		return best
+	end
+
+	local function dragScroll(h, p)
+		local sf = h.sf
+		if not sf or not sf.Parent then return end
+		local d = p - h.start
+		if not h.dragging then
+			if d.Magnitude < 8 then return end
+			h.dragging = true
+		end
+		local maxP = sf.AbsoluteCanvasSize - sf.AbsoluteWindowSize
+		local np = h.sfStart - d
+		local dir = sf.ScrollingDirection
+		local x, y = h.sfStart.X, h.sfStart.Y
+		if dir ~= Enum.ScrollingDirection.Y then x = math.clamp(np.X, 0, math.max(maxP.X, 0)) end
+		if dir ~= Enum.ScrollingDirection.X then y = math.clamp(np.Y, 0, math.max(maxP.Y, 0)) end
+		sf.CanvasPosition = Vector2.new(x, y)
+	end
+
 	local function doEvent(ev)
 		local k = ev.k
 		if k == "key" then
@@ -2263,7 +2301,12 @@ do
 			heldKeys[ev.a] = ev.b or nil
 		elseif k == "down" then
 			local p, o = eventScreenPos(ev)
-			held[ev.id] = {obj = o, pos = p}
+			held[ev.id] = {obj = o, pos = p, start = p}
+			local sf = findScroller(o, p)
+			if sf then
+				held[ev.id].sf = sf
+				held[ev.id].sfStart = sf.CanvasPosition
+			end
 			moveDot(p)
 			if VIM then
 				pcall(function() VIM:SendMouseMoveEvent(p.X, p.Y, game) end)
@@ -2274,10 +2317,12 @@ do
 			if not h then return end
 			local p = eventScreenPos(ev)
 			h.pos = p
+			dragScroll(h, p)
 			moveDot(p)
 			if VIM then pcall(function() VIM:SendMouseMoveEvent(p.X, p.Y, game) end) end
 		elseif k == "up" then
 			local p = eventScreenPos(ev)
+			if held[ev.id] then dragScroll(held[ev.id], p) end
 			moveDot(p)
 			if VIM then
 				pcall(function() VIM:SendMouseMoveEvent(p.X, p.Y, game) end)
