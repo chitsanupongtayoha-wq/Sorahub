@@ -1105,6 +1105,23 @@ do
 		acc += dt
 		if acc < 0.2 then return end
 		acc = 0
+
+		-- กวาดล้าง: ตัวที่ตาย/หมดสภาพ/ถูกลบ Humanoid ออก ต้องไม่เหลือ hitbox ค้าง
+		for part in pairs(realStore) do
+			if not part:IsDescendantOf(workspace) then
+				realStore[part] = nil
+			else
+				local model = part.Parent
+				local h = model and model:FindFirstChildOfClass("Humanoid")
+				if not h or not isTarget(h) then restoreReal(part) end
+			end
+		end
+		for hum in pairs(ext) do
+			if not hum.Parent or not hum:IsDescendantOf(workspace) or not isTarget(hum) then
+				removeExt(hum)
+			end
+		end
+
 		for hum in pairs(humSet) do
 			if not hum.Parent or not hum:IsDescendantOf(workspace) then
 				humSet[hum] = nil
