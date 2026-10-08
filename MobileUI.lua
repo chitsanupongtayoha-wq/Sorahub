@@ -1038,6 +1038,7 @@ do
 			p.Color = WHITE
 			p.Material = Enum.Material.SmoothPlastic
 			p.CastShadow = false
+			pcall(function() p.CollisionGroup = root.CollisionGroup end)
 
 			local w = Instance.new("WeldConstraint")
 			w.Part0 = root
@@ -1050,6 +1051,9 @@ do
 		else
 			local want = Vector3.new(s, s, s)
 			if o.part.Size ~= want then o.part.Size = want end
+			if o.part.CollisionGroup ~= root.CollisionGroup then
+				pcall(function() o.part.CollisionGroup = root.CollisionGroup end)
+			end
 		end
 	end
 
