@@ -603,7 +603,7 @@ end))
 
 local setSky
 do
-	local skyPlat, skyOrigCF, skyPlatY
+	local skyPlat, skyOrigCF, skyPlatY, skyGroundY
 
 	function setSky(on, skipReturn)
 		local cam = workspace.CurrentCamera
@@ -617,6 +617,7 @@ do
 			rp.FilterType = Enum.RaycastFilterType.Exclude
 			local hit = workspace:Raycast(root.Position, Vector3.new(0, -15, 0), rp)
 			local groundY = hit and hit.Position.Y or (root.Position.Y - 3)
+			skyGroundY = groundY
 			skyPlatY = groundY + OPT.SKY_HEIGHT - 1
 
 			skyAnchor = Instance.new("Part")
@@ -644,6 +645,7 @@ do
 			root.CFrame = skyOrigCF + Vector3.new(0, OPT.SKY_HEIGHT, 0)
 			cam.CameraType = Enum.CameraType.Custom
 			cam.CameraSubject = skyAnchor
+			invisRefresh()
 		else
 			if not skyOn then return end
 			skyOn = false
@@ -658,6 +660,7 @@ do
 				cam.CameraType = Enum.CameraType.Custom
 				if hum then cam.CameraSubject = hum end
 			end
+			invisRefresh()
 		end
 	end
 
@@ -677,6 +680,15 @@ do
 		if not skyOn or not skyAnchor then return end
 		local cam = workspace.CurrentCamera
 		if not cam then return end
+		-- กล้องตามการเดิน: ตัวอยู่บนฟ้า แต่กล้องอยู่ตำแหน่งเดียวกันบนพื้นเสมือนเดินจริง
+		local sroot = getRoot()
+		if sroot and skyOrigCF and skyGroundY then
+			skyAnchor.CFrame = CFrame.new(
+				skyOrigCF.X + (sroot.Position.X - skyOrigCF.X),
+				skyGroundY + 1.5 + (sroot.Position.Y - (skyPlatY + 1)),
+				skyOrigCF.Z + (sroot.Position.Z - skyOrigCF.Z)
+			)
+		end
 		if cam.CameraType ~= Enum.CameraType.Custom then cam.CameraType = Enum.CameraType.Custom end
 		if cam.CameraSubject ~= skyAnchor then cam.CameraSubject = skyAnchor end
 	end))
@@ -2494,7 +2506,7 @@ do
 
 	invisRefresh = function()
 		invisBtn.Text = tr("ล่องหน")
-		invisBtn.BackgroundColor3 = invisOn and GREEN or BG
+		invisBtn.BackgroundColor3 = skyOn and GREEN or BG
 	end
 	invisRefresh()
 	table.insert(langHooks, function() invisRefresh() end)
@@ -2502,13 +2514,16 @@ do
 	local invisMoved = makeDraggable(invisBtn, invisBtn)
 	invisBtn.MouseButton1Click:Connect(function()
 		if invisMoved() then return end
-		setInvis(not invisOn)
+		setSky(not skyOn)
 	end)
 
 	function setInvisBtn(on)
 		invisBtnOn = on
 		invisBtn.Visible = on
-		if not on then setInvis(false) end
+		if not on then
+			setInvis(false)
+			if skyOn then setSky(false) end
+		end
 	end
 end
 
