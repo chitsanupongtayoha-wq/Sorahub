@@ -971,6 +971,8 @@ do
 		local myChar = player.Character
 		if myChar and (model == myChar or model:IsDescendantOf(myChar)) then return false end
 		if hum.Health <= 0 then return false end
+		-- มี ForceField = โดนดาเมจไม่ได้ ไม่ต้องมี hitbox (จะกลับมาเองเมื่อเกราะหมด)
+		if model:FindFirstChildOfClass("ForceField") then return false end
 		if Players:GetPlayerFromCharacter(model) then
 			return hitboxPlayers
 		end
