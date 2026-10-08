@@ -649,12 +649,29 @@ do
 		else
 			if not skyOn then return end
 			skyOn = false
+
+			-- ตอนปิด: กลับลงมาตรงจุดที่กล้อง/ตัวเสมือนอยู่ตอนนี้ ไม่ใช่จุดที่กดเปิด
+			local returnCF = skyOrigCF
+			local rootNow = getRoot()
+			if skyAnchor and rootNow then
+				local ap = skyAnchor.Position
+				local rpp = RaycastParams.new()
+				rpp.FilterDescendantsInstances = {player.Character}
+				rpp.FilterType = Enum.RaycastFilterType.Exclude
+				local hit = workspace:Raycast(ap + Vector3.new(0, 4, 0), Vector3.new(0, -60, 0), rpp)
+				if not hit then
+					hit = workspace:Raycast(ap + Vector3.new(0, 300, 0), Vector3.new(0, -700, 0), rpp)
+				end
+				local pos = hit and (hit.Position + Vector3.new(0, 3.5, 0)) or ap
+				returnCF = CFrame.new(pos) * (rootNow.CFrame - rootNow.CFrame.Position)
+			end
+
 			if skyPlat then skyPlat:Destroy() skyPlat = nil end
 			if skyAnchor then skyAnchor:Destroy() skyAnchor = nil end
 			local root, hum = getRoot(), getHum()
-			if not skipReturn and root and skyOrigCF then
+			if not skipReturn and root and returnCF then
 				root.AssemblyLinearVelocity = Vector3.zero
-				root.CFrame = skyOrigCF
+				root.CFrame = returnCF
 			end
 			if cam then
 				cam.CameraType = Enum.CameraType.Custom
