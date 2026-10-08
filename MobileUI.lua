@@ -1068,6 +1068,58 @@ do
 		for part in pairs(realStore) do restoreReal(part) end
 	end
 
+	-- ===== รายบุคคล: ทุกครั้งที่ผู้เล่นคนหนึ่งตาย/เกิดใหม่ ล้างแล้วสร้าง hitbox ของคนนั้นใหม่ =====
+	local playerConns = {} -- [Player] = {Connection...}
+	local plrAddConn = nil
+
+	local function releasePlayer(p)
+		local ch = p.Character
+		if not ch then return end
+		local hum = ch:FindFirstChildOfClass("Humanoid")
+		if hum then
+			removeExt(hum)
+			humSet[hum] = nil
+		end
+		local r = pickPart(ch)
+		if r then restoreReal(r) end
+	end
+
+	local function watchPlayer(p)
+		if p == player or playerConns[p] then return end
+
+		local function onChar(ch)
+			if not hitboxOn then return end
+			task.spawn(function()
+				local hum = ch:WaitForChild("Humanoid", 10)
+				ch:WaitForChild("HumanoidRootPart", 10)
+				if not hum then return end
+				-- ตายแล้ว: ล้าง hitbox ของคนนี้ทันที
+				hum.Died:Connect(function() releasePlayer(p) end)
+				-- สร้างใหม่หลังเกิด และย้ำอีกสองรอบ เผื่อเกมประกอบตัวละครหลังเกิด
+				for i = 1, 3 do
+					if not hitboxOn or not ch.Parent then return end
+					addHum(hum)
+					applyOne(hum)
+					task.wait(i == 1 and 0.5 or 1.5)
+				end
+			end)
+		end
+
+		playerConns[p] = {
+			p.CharacterAdded:Connect(onChar),
+			p.CharacterRemoving:Connect(function() releasePlayer(p) end),
+		}
+		if p.Character then onChar(p.Character) end
+	end
+
+	local function unwatchAll()
+		for _, cs in pairs(playerConns) do
+			for _, c in ipairs(cs) do c:Disconnect() end
+		end
+		table.clear(playerConns)
+		if plrAddConn then plrAddConn:Disconnect() plrAddConn = nil end
+	end
+
 	function setHitbox(on)
 		if on == hitboxOn then return end
 		hitboxOn = on
@@ -1077,6 +1129,8 @@ do
 		if on then
 			if addConn then addConn:Disconnect() end
 			addConn = workspace.DescendantAdded:Connect(addHum)
+			for _, pl in ipairs(Players:GetPlayers()) do watchPlayer(pl) end
+			plrAddConn = Players.PlayerAdded:Connect(watchPlayer)
 			task.spawn(function()
 				local n = 0
 				for _, inst in ipairs(workspace:GetDescendants()) do
@@ -1088,6 +1142,7 @@ do
 			end)
 		else
 			if addConn then addConn:Disconnect() addConn = nil end
+			unwatchAll()
 			restoreAll()
 			table.clear(humSet)
 		end
