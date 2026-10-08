@@ -120,6 +120,7 @@ local EN = {
 	["Acrylic (เบลอ)"] = "Acrylic (blur)", ["ปุ่มเปิด/ปิดเมนู"] = "Menu toggle key",
 	["กดปุ่มที่ต้องการ (Esc ยกเลิก)"] = "Press a key (Esc to cancel)", ["ล้างปุ่ม"] = "Clear key",
 	["รีเซ็ตหน้าตาทั้งหมด"] = "Reset all looks", ["โหลดรูปจากลิงก์ไม่ได้"] = "Could not load image from URL",
+	["ชดเชยจุดกด แกน X (px)"] = "Click offset X (px)", ["ชดเชยจุดกด แกน Y (px)"] = "Click offset Y (px)",
 }
 local function tr(s)
 	if lang == "en" then return EN[s] or s end
@@ -2441,6 +2442,14 @@ do
 			function() return replayLoop end,
 			function(b) replayLoop = b end)
 		local clearBtn = makeCellButton(r3[2], tr("ล้างที่อัด"), GRAY)
+
+		local r4 = gridRow(parent, 4, 2, 48)
+		makeNumberCard(r4[1], "ชดเชยจุดกด แกน X (px)", -300, 300,
+			function() return math.floor(OPT.CLICK_DX or 0) end,
+			function(v) OPT.CLICK_DX = v end)
+		makeNumberCard(r4[2], "ชดเชยจุดกด แกน Y (px)", -300, 300,
+			function() return math.floor(OPT.CLICK_DY or 0) end,
+			function(v) OPT.CLICK_DY = v end)
 
 		local flash = nil
 		local function refresh()
