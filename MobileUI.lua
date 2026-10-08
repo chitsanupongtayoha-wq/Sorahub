@@ -930,6 +930,23 @@ local hitboxReal = false -- true = ขยายพาร์ทจริงขอ
 local setHitbox, setHitboxReal
 do
 	local HB_NAME = "SoraHitbox"
+	local HB_TRANSP = 0.7 -- ความโปร่งใสของกล่อง (ล็อกไว้ ไม่ให้เกมเปลี่ยนเป็นขาวทึบ)
+
+	-- ล็อกหน้าตา: ถ้าเกมแก้ Transparency/Color ของพาร์ทนี้ (เช่น fade ตัวละคร) ให้ตั้งกลับทันที
+	local function lockLook(part)
+		return {
+			part:GetPropertyChangedSignal("Transparency"):Connect(function()
+				if part.Transparency ~= HB_TRANSP then part.Transparency = HB_TRANSP end
+			end),
+			part:GetPropertyChangedSignal("Color"):Connect(function()
+				if part.Color ~= WHITE then part.Color = WHITE end
+			end),
+		}
+	end
+	local function unlock(cs)
+		if not cs then return end
+		for _, c in ipairs(cs) do c:Disconnect() end
+	end
 	local humSet = {}   -- [Humanoid] = true
 	local ext = {}      -- [Humanoid] = {part = Part, root = BasePart}
 	local realStore = {} -- [BasePart] = ค่าเดิม (โหมดขยายตัวจริง)
@@ -947,6 +964,7 @@ do
 		local o = ext[hum]
 		if not o then return end
 		ext[hum] = nil
+		unlock(o.locks)
 		pcall(function() o.part:Destroy() end)
 	end
 
@@ -954,6 +972,7 @@ do
 		local o = realStore[part]
 		if not o then return end
 		realStore[part] = nil
+		unlock(o.locks) -- ต้องปลดล็อกก่อนคืนค่า ไม่งั้นจะถูกตั้งกลับเป็นกล่องขาว
 		if part.Parent then
 			pcall(function()
 				part.Size = o.Size
@@ -1007,12 +1026,13 @@ do
 					Color = root.Color,
 					Material = root.Material,
 				}
+				realStore[root].locks = lockLook(root)
 			end
 			local rs = math.clamp(hitboxSize, 1, HB_MAX)
 			local rwant = Vector3.new(rs, rs, rs)
 			if root.Size ~= rwant then root.Size = rwant end
-			root.Transparency = 0.7
-			root.Color = WHITE
+			if root.Transparency ~= HB_TRANSP then root.Transparency = HB_TRANSP end
+			if root.Color ~= WHITE then root.Color = WHITE end
 			root.Material = Enum.Material.SmoothPlastic
 			root.CanCollide = false
 			return
@@ -1036,7 +1056,7 @@ do
 			p.CanQuery = true
 			p.CanTouch = true
 			p.Massless = true
-			p.Transparency = 0.7
+			p.Transparency = HB_TRANSP
 			p.Color = WHITE
 			p.Material = Enum.Material.SmoothPlastic
 			p.CastShadow = false
@@ -1048,11 +1068,13 @@ do
 			w.Parent = p
 
 			p.Parent = model
-			o = {part = p, root = root}
+			o = {part = p, root = root, locks = lockLook(p)}
 			ext[hum] = o
 		else
 			local want = Vector3.new(s, s, s)
 			if o.part.Size ~= want then o.part.Size = want end
+			if o.part.Transparency ~= HB_TRANSP then o.part.Transparency = HB_TRANSP end
+			if o.part.Color ~= WHITE then o.part.Color = WHITE end
 			if o.part.CollisionGroup ~= root.CollisionGroup then
 				pcall(function() o.part.CollisionGroup = root.CollisionGroup end)
 			end
