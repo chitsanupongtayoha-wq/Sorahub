@@ -111,6 +111,15 @@ local EN = {
 	["ลากย้าย"] = "drag", ["ออกเกมแล้ว"] = "Left the game",
 	["Hitbox ขยาย"] = "Hitbox expand", ["ขนาด Hitbox"] = "Hitbox size",
 	["Hitbox: ผู้เล่น"] = "Hitbox: players", ["Hitbox: ขยายตัวจริง"] = "Hitbox: resize real part", ["Hitbox: ม็อบ (NPC)"] = "Hitbox: mobs (NPC)",
+	["🎨 ธีมสี"] = "🎨 Color theme", ["🖼 รูปภาพและโลโก้"] = "🖼 Images & logo",
+	["✨ ความโปร่งแสงและเอฟเฟกต์"] = "✨ Transparency & effects",
+	["สีหลัก (Accent)"] = "Accent color", ["สีพื้นหลัง"] = "Background color",
+	["สีแถบ/ปุ่ม (Tab)"] = "Sidebar / tab color", ["สีตัวอักษร"] = "Text color",
+	["โลโก้ (ไอดี/ลิงก์รูป)"] = "Logo (ID / image URL)", ["รูปพื้นหลัง (ไอดี/ลิงก์)"] = "Background image (ID / URL)",
+	["ความโปร่งรูปพื้นหลัง %"] = "Background image transparency %", ["ความโปร่ง UI %"] = "UI transparency %",
+	["Acrylic (เบลอ)"] = "Acrylic (blur)", ["ปุ่มเปิด/ปิดเมนู"] = "Menu toggle key",
+	["กดปุ่มที่ต้องการ (Esc ยกเลิก)"] = "Press a key (Esc to cancel)", ["ล้างปุ่ม"] = "Clear key",
+	["รีเซ็ตหน้าตาทั้งหมด"] = "Reset all looks", ["โหลดรูปจากลิงก์ไม่ได้"] = "Could not load image from URL",
 }
 local function tr(s)
 	if lang == "en" then return EN[s] or s end
