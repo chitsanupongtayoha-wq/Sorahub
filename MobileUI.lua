@@ -603,7 +603,36 @@ end))
 
 local setSky
 do
-	local skyPlat, skyOrigCF, skyPlatY, skyGroundY
+	local skyPlat, skyOrigCF, skyPlatY
+
+	-- หาความสูงพื้นใต้จุดที่กำหนด (ข้ามตัวละคร/ม็อบ และพาร์ทที่ไม่ชน)
+	local function skyFindGround(x, y, z, up, dist)
+		local ex = {}
+		if player.Character then table.insert(ex, player.Character) end
+		if skyPlat then table.insert(ex, skyPlat) end
+		for _, pl in ipairs(Players:GetPlayers()) do
+			if pl.Character then table.insert(ex, pl.Character) end
+		end
+		local rp = RaycastParams.new()
+		rp.FilterType = Enum.RaycastFilterType.Exclude
+		local origin = Vector3.new(x, y + up, z)
+		for _ = 1, 6 do
+			rp.FilterDescendantsInstances = ex
+			local hit = workspace:Raycast(origin, Vector3.new(0, -dist, 0), rp)
+			if not hit then return nil end
+			local inst = hit.Instance
+			local model = inst:FindFirstAncestorOfClass("Model")
+			local isChar = model and model:FindFirstChildOfClass("Humanoid")
+			if isChar then
+				table.insert(ex, model)
+			elseif inst.CanCollide == false then
+				table.insert(ex, inst)
+			else
+				return hit.Position.Y
+			end
+		end
+		return nil
+	end
 
 	function setSky(on, skipReturn)
 		local cam = workspace.CurrentCamera
@@ -612,12 +641,9 @@ do
 			if skyOn or not root or not hum or not cam then return end
 			skyOrigCF = root.CFrame
 
-			local rp = RaycastParams.new()
-			rp.FilterDescendantsInstances = {player.Character}
-			rp.FilterType = Enum.RaycastFilterType.Exclude
-			local hit = workspace:Raycast(root.Position, Vector3.new(0, -15, 0), rp)
-			local groundY = hit and hit.Position.Y or (root.Position.Y - 3)
-			skyGroundY = groundY
+			-- หาพื้นจริงใต้ตัว (ไกลได้ถึง 20000) ถ้าอยู่กลางอากาศ ตัวจะตกลงพื้นเหมือนปกติ
+			local groundY = skyFindGround(root.Position.X, root.Position.Y, root.Position.Z, 5, 20000)
+				or (root.Position.Y - 3)
 			skyPlatY = groundY + OPT.SKY_HEIGHT - 1
 
 			skyAnchor = Instance.new("Part")
@@ -681,10 +707,19 @@ do
 		end
 	end
 
-	track(RunService.Heartbeat:Connect(function()
+	-- แพลตฟอร์มลอกพื้นจริง: เดินขึ้นภูเขา/ลงเนินได้เหมือนอยู่บนพื้น (ผนังทะลุได้)
+	local groundAcc = 0
+	track(RunService.Heartbeat:Connect(function(dt)
 		if not skyOn then return end
 		local root = getRoot()
 		if root and skyPlat then
+			groundAcc += dt
+			if groundAcc >= 0.03 then
+				groundAcc = 0
+				local vy = root.Position.Y - OPT.SKY_HEIGHT -- ความสูงเสมือนบนพื้นจริง
+				local g = skyFindGround(root.Position.X, vy, root.Position.Z, 12, 3000)
+				if g then skyPlatY = g + OPT.SKY_HEIGHT - 1 end
+			end
 			skyPlat.CFrame = CFrame.new(root.Position.X, skyPlatY, root.Position.Z)
 			if root.Position.Y < skyPlatY - 40 then
 				root.AssemblyLinearVelocity = Vector3.zero
@@ -697,14 +732,10 @@ do
 		if not skyOn or not skyAnchor then return end
 		local cam = workspace.CurrentCamera
 		if not cam then return end
-		-- กล้องตามการเดิน: ตัวอยู่บนฟ้า แต่กล้องอยู่ตำแหน่งเดียวกันบนพื้นเสมือนเดินจริง
+		-- กล้องตามตัวเสมือน: ตำแหน่งตัวบนฟ้า ลบความสูงฟ้า = ตำแหน่งบนพื้นจริง
 		local sroot = getRoot()
-		if sroot and skyOrigCF and skyGroundY then
-			skyAnchor.CFrame = CFrame.new(
-				skyOrigCF.X + (sroot.Position.X - skyOrigCF.X),
-				skyGroundY + 1.5 + (sroot.Position.Y - (skyPlatY + 1)),
-				skyOrigCF.Z + (sroot.Position.Z - skyOrigCF.Z)
-			)
+		if sroot then
+			skyAnchor.CFrame = CFrame.new(sroot.Position - Vector3.new(0, OPT.SKY_HEIGHT - 1.5, 0))
 		end
 		if cam.CameraType ~= Enum.CameraType.Custom then cam.CameraType = Enum.CameraType.Custom end
 		if cam.CameraSubject ~= skyAnchor then cam.CameraSubject = skyAnchor end
