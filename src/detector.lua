@@ -9,6 +9,7 @@ do
 	local SPEED_LIMIT = 150     -- ความเร็วเฉลี่ยแนวราบ (studs/s)
 	local FLY_TIME = 6          -- ลอยกลางอากาศนิ่งๆ นานเท่านี้ = บิน
 	local FLAG_TTL = 8
+	local RANGE = 300           -- ไกลกว่านี้เกมส่งตำแหน่งมาห่างและกระตุก ไม่ตรวจ (กันขึ้นมั่ว)
 
 	local on = false
 	-- เปิด/ปิดเป็นรายประเภท (ลอย/บิน ปิดไว้ก่อน เพราะบางเกมมีคนค้างลอยเอง)
@@ -116,6 +117,8 @@ do
 	local function step()
 		local now = os.clock()
 		rayParams.FilterDescendantsInstances = {player.Character}
+		local myChar = player.Character
+		local myRootPart = myChar and myChar:FindFirstChild("HumanoidRootPart")
 		for _, pl in ipairs(Players:GetPlayers()) do
 			if pl ~= player then
 				local char = pl.Character
@@ -145,6 +148,17 @@ do
 					end
 					local pos = root.Position
 					local d = (pos - st.lastPos).Magnitude
+					if not myRootPart or skyOn or (pos - myRootPart.Position).Magnitude > RANGE then
+						-- ไกลเกินไป: ข้อมูลตำแหน่งไม่แม่น ข้ามรอบนี้และเริ่มนับ "นิ่ง" ใหม่ตอนกลับเข้าใกล้
+						st.born = now
+						st.lastPos = pos
+						st.frozenFor = 0
+						st.dirBefore = nil
+						table.clear(st.hist)
+						st.airFor = 0
+						refreshTag(pl, st, root)
+						continue
+					end
 					local settled = now - st.born > 3
 
 					local vel = root.AssemblyLinearVelocity
