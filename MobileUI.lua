@@ -109,7 +109,7 @@ local EN = {
 	["เซฟไม่ได้ (executor ไม่รองรับ)"] = "Cannot save (executor unsupported)",
 	["ล่องหน"] = "Hide", ["ปิดบิน"] = "Stop fly", ["ปิง"] = "Ping", ["คน"] = "Players",
 	["ลากย้าย"] = "drag", ["ออกเกมแล้ว"] = "Left the game",
-	["Hitbox ขยาย"] = "Hitbox expand", ["ขนาด Hitbox"] = "Hitbox size",
+	["Hitbox ขยาย"] = "Hitbox expand", ["ขนาด Hitbox"] = "Hitbox size", ["ขนาด Hitbox ผู้เล่น"] = "Hitbox size: players", ["ขนาด Hitbox ม็อบ"] = "Hitbox size: mobs",
 	["Hitbox: ผู้เล่น"] = "Hitbox: players", ["Hitbox: ขยายตัวจริง"] = "Hitbox: resize real part", ["Hitbox: ม็อบ (NPC)"] = "Hitbox: mobs (NPC)",
 	["🎨 ธีมสี"] = "🎨 Color theme", ["🖼 รูปภาพและโลโก้"] = "🖼 Images & logo",
 	["✨ ความโปร่งแสงและเอฟเฟกต์"] = "✨ Transparency & effects",
@@ -796,7 +796,7 @@ do
 	end))
 end
 
-local espOn, fullbrightOn, aimOn, spectateOn = false, false, false, false
+local espOn, fullbrightOn, aimOn, spectateOn = true, false, false, false
 local targetPlayer = nil
 
 local function getChar(p)
@@ -1000,6 +1000,7 @@ end
 -- ตัวละคร/ม็อบจึงเดิน ขยับ และวาร์ปได้ตามปกติ และ hitbox ตามตัวไปด้วย
 local HB_MAX = 2048
 local hitboxOn, hitboxSize = false, 10
+local hitboxMobSize = 200
 local hitboxPlayers, hitboxMobs = true, true
 local hitboxReal = false -- true = ขยายพาร์ทจริงของตัวละคร (ไม่ใช้พาร์ทเสริม)
 local setHitbox, setHitboxReal
@@ -1073,6 +1074,11 @@ do
 		return hitboxMobs
 	end
 
+	local function sizeFor(hum)
+		local v = Players:GetPlayerFromCharacter(hum.Parent) and hitboxSize or hitboxMobSize
+		return math.clamp(v, 1, HB_MAX)
+	end
+
 	local function applyOne(hum)
 		local model = hum.Parent
 		if not model then return end
@@ -1103,7 +1109,7 @@ do
 				}
 				realStore[root].locks = lockLook(root)
 			end
-			local rs = math.clamp(hitboxSize, 1, HB_MAX)
+			local rs = sizeFor(hum)
 			local rwant = Vector3.new(rs, rs, rs)
 			if root.Size ~= rwant then root.Size = rwant end
 			if root.Transparency ~= HB_TRANSP then root.Transparency = HB_TRANSP end
@@ -1120,7 +1126,7 @@ do
 			o = nil
 		end
 
-		local s = math.clamp(hitboxSize, 1, HB_MAX)
+		local s = sizeFor(hum)
 		if not o then
 			local p = Instance.new("Part")
 			p.Name = HB_NAME
@@ -1651,7 +1657,7 @@ local function saveSettings()
 	local data = {
 		lang = lang, speed = speedVal, jump = jumpVal, fly = flyVal,
 		tp = tpVal, aim = aimRange, hud = statsHudOn,
-		hitbox = hitboxSize, hbPlayers = hitboxPlayers, hbMobs = hitboxMobs,
+		hitbox = hitboxSize, hbMobSize = hitboxMobSize, hbPlayers = hitboxPlayers, hbMobs = hitboxMobs,
 	}
 	local ok = pcall(function()
 		writefile(OPT.SAVE_FILE, HttpService:JSONEncode(data))
@@ -1670,6 +1676,7 @@ local function loadSettings(startup)
 	if type(data.aim) == "number" then aimRange = math.clamp(math.floor(data.aim), 1, AIM_RANGE_MAX) end
 	if type(data.hud) == "boolean" then statsHudOn = data.hud end
 	if type(data.hitbox) == "number" then hitboxSize = math.clamp(math.floor(data.hitbox), 1, HB_MAX) end
+	if type(data.hbMobSize) == "number" then hitboxMobSize = math.clamp(math.floor(data.hbMobSize), 1, HB_MAX) end
 	if type(data.hbPlayers) == "boolean" then hitboxPlayers = data.hbPlayers end
 	if type(data.hbMobs) == "boolean" then hitboxMobs = data.hbMobs end
 	if not startup then
@@ -2987,7 +2994,7 @@ local function renderView(parent)
 	makeSwitchCard(r5[1], "Hitbox ขยาย",
 		function() return hitboxOn end,
 		function(b) setHitbox(b) end)
-	makeNumberCard(r5[2], "ขนาด Hitbox", 1, HB_MAX,
+	makeNumberCard(r5[2], "ขนาด Hitbox ผู้เล่น", 1, HB_MAX,
 		function() return hitboxSize end,
 		function(v) hitboxSize = v end)
 
@@ -3003,6 +3010,11 @@ local function renderView(parent)
 	makeSwitchCard(r7[1], "Hitbox: ขยายตัวจริง",
 		function() return hitboxReal end,
 		function(b) setHitboxReal(b) end)
+
+	local r8 = gridRow(parent, 8, 1, 48)
+	makeNumberCard(r8[1], "ขนาด Hitbox ม็อบ", 1, HB_MAX,
+		function() return hitboxMobSize end,
+		function(v) hitboxMobSize = v end)
 end
 
 local replayTabOn = false
