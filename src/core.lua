@@ -115,6 +115,7 @@ local EN = {
 	["กำลังเข้าร่วม..."] = "Joining...", ["เข้าร่วมไม่สำเร็จ (เกมอาจไม่อนุญาต)"] = "Join failed (game may block it)",
 	["โหลดรายชื่อเพื่อนไม่ได้"] = "Could not load friends", ["เพื่อนที่อยู่ในเกม"] = "Friends in game",
 	["ป้องกันปลิว"] = "Anti-fling",
+	["ตรวจจับคนโกง (ป้ายเหนือหัว)"] = "Cheat detector (head tags)",
 	["ย้ายเซิร์ฟ (ต้องไม่โดนตี 1 นาที + เลือดเต็ม)"] = "Hop server (no hits for 1 min + full HP)",
 	["ไม่พบตัวละคร"] = "Character not found", ["เลือดยังไม่เต็ม"] = "Health not full",
 	["พร้อมย้ายเซิร์ฟ"] = "Ready to hop", ["กำลังย้ายเซิร์ฟ..."] = "Hopping...", ["ย้ายไม่สำเร็จ"] = "Hop failed", ["กล้องทะลุ + ซูมไม่จำกัด"] = "NC cam (through walls, unlimited zoom)", ["ขนาด Hitbox ผู้เล่น"] = "Hitbox size: players", ["ขนาด Hitbox ม็อบ"] = "Hitbox size: mobs",

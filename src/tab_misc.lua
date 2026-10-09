@@ -55,6 +55,11 @@ local function renderMisc(parent)
 		function() return OPT.getAntiFling() end,
 		function(b) OPT.setAntiFling(b) end)
 
+	local r6 = gridRow(parent, 6, 1, 48)
+	makeSwitchCard(r6[1], "ตรวจจับคนโกง (ป้ายเหนือหัว)",
+		function() return OPT.getDetect() end,
+		function(b) OPT.setDetect(b) end)
+
 	local r5 = gridRow(parent, 5, 1, 52)
 	local HOP_TXT = "ย้ายเซิร์ฟ (ต้องไม่โดนตี 1 นาที + เลือดเต็ม)"
 	local hopBtn = makeCellButton(r5[1], tr(HOP_TXT), ORANGE)

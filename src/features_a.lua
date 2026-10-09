@@ -1227,6 +1227,8 @@ end
 
 local function restoreOriginals()
 	if OPT.setNcCam then OPT.setNcCam(false) end
+	if OPT.setDetect then OPT.setDetect(false) end
+	if OPT.setAntiFling then OPT.setAntiFling(false) end
 	if stopPlay then stopPlay() end
 	if stopRecording then stopRecording() end
 	speedOn, jumpOn, airJump, tpOn = false, false, false, false
