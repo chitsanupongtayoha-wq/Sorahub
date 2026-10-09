@@ -7,7 +7,7 @@ do
 	local JUMP_AFTER_FREEZE = 12
 	local TELEPORT_DIST = 70    -- ขยับเกินนี้ในเสี้ยววิ = วาร์ป
 	local SPEED_LIMIT = 150     -- ความเร็วเฉลี่ยแนวราบ (studs/s)
-	local FLY_TIME = 6          -- ลอยกลางอากาศนิ่งๆ นานเท่านี้ = บิน
+	local FLY_TIME = 4          -- ลอยกลางอากาศนิ่งๆ นานเท่านี้ = บิน
 	local FLAG_TTL = 8
 	local RANGE = 300           -- ไกลกว่านี้เกมส่งตำแหน่งมาห่างและกระตุก ไม่ตรวจ (กันขึ้นมั่ว)
 
@@ -51,8 +51,8 @@ do
 	end
 
 	local on = false
-	-- เปิด/ปิดเป็นรายประเภท (ลอย/บิน ปิดไว้ก่อน เพราะบางเกมมีคนค้างลอยเอง)
-	local kinds = {lag = true, speed = true, fly = false}
+	-- เปิด/ปิดเป็นรายประเภท (ลอย/บิน จับเฉพาะคนที่ผลปีศาจไม่ใช่ผลที่บินได้)
+	local kinds = {lag = true, speed = true, fly = true}
 	local conn = nil
 	local acc = 0
 	local state = setmetatable({}, {__mode = "k"})   -- player -> data
@@ -254,7 +254,7 @@ do
 					else
 						st.airFor = 0
 					end
-					if kinds.fly and settled and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
+					if kinds.fly and settled and sc == 1 and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
 
 					st.lastPos = pos
 					st.prevHV = hv
