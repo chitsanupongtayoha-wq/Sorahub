@@ -109,7 +109,7 @@ local EN = {
 	["เซฟไม่ได้ (executor ไม่รองรับ)"] = "Cannot save (executor unsupported)",
 	["ล่องหน"] = "Hide", ["ปิดบิน"] = "Stop fly", ["ปิง"] = "Ping", ["คน"] = "Players",
 	["ลากย้าย"] = "drag", ["ออกเกมแล้ว"] = "Left the game",
-	["Hitbox ขยาย"] = "Hitbox expand", ["ขนาด Hitbox"] = "Hitbox size", ["ขนาด Hitbox ผู้เล่น"] = "Hitbox size: players", ["ขนาด Hitbox ม็อบ"] = "Hitbox size: mobs",
+	["Hitbox ขยาย"] = "Hitbox expand", ["ขนาด Hitbox"] = "Hitbox size", ["กล้องทะลุ + ซูมไม่จำกัด"] = "NC cam (through walls, unlimited zoom)", ["ขนาด Hitbox ผู้เล่น"] = "Hitbox size: players", ["ขนาด Hitbox ม็อบ"] = "Hitbox size: mobs",
 	["Hitbox: ผู้เล่น"] = "Hitbox: players", ["Hitbox: ขยายตัวจริง"] = "Hitbox: resize real part", ["Hitbox: ม็อบ (NPC)"] = "Hitbox: mobs (NPC)",
 	["🎨 ธีมสี"] = "🎨 Color theme", ["🖼 รูปภาพและโลโก้"] = "🖼 Images & logo",
 	["✨ ความโปร่งแสงและเอฟเฟกต์"] = "✨ Transparency & effects",
@@ -1609,7 +1609,55 @@ local function resetTp()
 	tpVal = 10
 end
 
+-- ===== NC Cam: กล้องทะลุกำแพง + ซูมออกไม่จำกัด =====
+do
+	local ncOn = false
+	local saved = nil
+	local conn = nil
+
+	local function enforce()
+		pcall(function()
+			player.CameraMaxZoomDistance = 100000
+			player.CameraMinZoomDistance = 0.5
+			player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+		end)
+	end
+
+	function OPT.setNcCam(on)
+		if on == ncOn then return end
+		ncOn = on
+		if on then
+			saved = {
+				max = player.CameraMaxZoomDistance,
+				min = player.CameraMinZoomDistance,
+				occ = player.DevCameraOcclusionMode,
+			}
+			enforce()
+			-- เกมบางเกมรีเซ็ตค่ากล้อง เลยย้ำค่าซ้ำเป็นระยะ
+			local acc = 0
+			conn = RunService.Heartbeat:Connect(function(dt)
+				acc += dt
+				if acc < 0.5 then return end
+				acc = 0
+				enforce()
+			end)
+		else
+			if conn then conn:Disconnect(); conn = nil end
+			if saved then
+				pcall(function()
+					player.CameraMaxZoomDistance = saved.max
+					player.CameraMinZoomDistance = saved.min
+					player.DevCameraOcclusionMode = saved.occ
+				end)
+				saved = nil
+			end
+		end
+	end
+	function OPT.getNcCam() return ncOn end
+end
+
 local function restoreOriginals()
+	if OPT.setNcCam then OPT.setNcCam(false) end
 	if stopPlay then stopPlay() end
 	if stopRecording then stopRecording() end
 	speedOn, jumpOn, airJump, tpOn = false, false, false, false
@@ -3065,6 +3113,11 @@ local function renderMisc(parent)
 	rp.MouseButton1Click:Connect(function()
 		setReplayTab(not replayTabOn)
 	end)
+
+	local r4 = gridRow(parent, 4, 2, 48)
+	makeSwitchCard(r4[1], "กล้องทะลุ + ซูมไม่จำกัด",
+		function() return OPT.getNcCam() end,
+		function(b) OPT.setNcCam(b) end)
 end
 
 -- ===== Look / Theme module =====
