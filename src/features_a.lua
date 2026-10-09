@@ -424,7 +424,7 @@ do
 
 		local bb = Instance.new("BillboardGui")
 		bb.Adornee = head
-		bb.Size = UDim2.fromOffset(240, 100)
+		bb.Size = UDim2.fromOffset(260, 120)
 		bb.StudsOffset = Vector3.new(0, 2.8, 0)
 		bb.AlwaysOnTop = true
 		bb.Parent = gui

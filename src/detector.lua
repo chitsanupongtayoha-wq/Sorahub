@@ -36,10 +36,18 @@ do
 		end
 		return 1
 	end
+	local function commas(n)
+		local str = tostring(math.floor(tonumber(n) or 0))
+		local out = str:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+		return (out:gsub("^,", ""))
+	end
 	function OPT.infoLine(pl)
 		local f, st = fruitOf(pl), statValue(pl, "Current_FightingStyle")
-		if not f and not st then return nil end
-		return "ผล: " .. tostring(f or "-") .. " | สไตล์: " .. tostring(st or "-")
+		local lv, money = statValue(pl, "Level"), statValue(pl, "Money")
+		if not f and not st and not lv and not money then return nil end
+		local l1 = "ผล: " .. tostring(f or "-") .. " | สไตล์: " .. tostring(st or "-")
+		local l2 = "เลเวล " .. (lv and commas(lv) or "-") .. " | เงิน " .. (money and commas(money) or "-")
+		return l1 .. "\n" .. l2
 	end
 
 	local on = false
