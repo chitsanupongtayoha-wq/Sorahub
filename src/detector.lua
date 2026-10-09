@@ -48,8 +48,50 @@ do
 		return b
 	end
 
+	local WEIGHT = {["วาร์ป"] = 3, ["น่าสงสัยโปรตัดเน็ต"] = 2, ["ความเร็วผิดปกติ"] = 2, ["ลอย/บิน?"] = 2}
+	local WINDOW = 90
+
 	local function flag(pl, st, root, reason)
-		st.flags[reason] = os.clock()
+		local now = os.clock()
+		st.flags[reason] = now
+		-- บันทึกเป็น "เหตุการณ์" สำหรับคิดคะแนนความเสี่ยง (กันนับซ้ำภายใน 2 วิ)
+		if now - (st.lastEv[reason] or -math.huge) > 2 then
+			st.lastEv[reason] = now
+			table.insert(st.events, {t = now, w = WEIGHT[reason] or 1})
+		end
+	end
+
+	local function trim(list, now)
+		while list[1] do
+			local t = type(list[1]) == "table" and list[1].t or list[1]
+			if now - t <= WINDOW then break end
+			table.remove(list, 1)
+		end
+	end
+
+	local TIERS = {
+		red = {color = Color3.fromRGB(255, 60, 60), text = "🔴 โปรแน่นอน"},
+		orange = {color = Color3.fromRGB(255, 150, 40), text = "🟠 มีโอกาสสูง"},
+		yellow = {color = Color3.fromRGB(255, 220, 60), text = "🟡 มีความเสี่ยง"},
+		green = {color = Color3.fromRGB(80, 220, 100), text = "🟢 ปกติ"},
+		blue = {color = Color3.fromRGB(80, 170, 255), text = "🔵 เครื่องกาก/แลคง่าย"},
+	}
+
+	-- คืนค่า tier ของผู้เล่น (nil ถ้าระบบตรวจจับปิดอยู่)
+	function OPT.riskInfo(pl)
+		if not on then return nil end
+		local st = state[pl]
+		if not st or not st.events then return TIERS.green end
+		local now = os.clock()
+		trim(st.events, now)
+		trim(st.stutters, now)
+		local score = 0
+		for _, e in ipairs(st.events) do score += e.w end
+		if score >= 10 then return TIERS.red end
+		if score >= 6 then return TIERS.orange end
+		if score >= 2 then return TIERS.yellow end
+		if #st.stutters >= 6 then return TIERS.blue end
+		return TIERS.green
 	end
 
 	local function refreshTag(pl, st, root)
@@ -62,7 +104,7 @@ do
 				table.insert(list, reason)
 			end
 		end
-		if #list == 0 then
+		if #list == 0 or espOn then
 			if st.gui then removeTag(pl) end
 			return
 		end
@@ -81,7 +123,7 @@ do
 				local hum = char and char:FindFirstChildOfClass("Humanoid")
 				local st = state[pl]
 				if not st then
-					st = {flags = {}}
+					st = {flags = {}, events = {}, stutters = {}, lastEv = {}}
 					state[pl] = st
 				end
 				if not root or not hum or hum.Health <= 0 then
@@ -91,6 +133,8 @@ do
 				else
 					if st.char ~= char then
 						st.char = char
+						st.dirBefore = nil
+						st.prevHV = nil
 						st.born = now
 						st.lastPos = root.Position
 						st.frozenFor = 0
@@ -103,9 +147,22 @@ do
 					local d = (pos - st.lastPos).Magnitude
 					local settled = now - st.born > 3
 
+					local vel = root.AssemblyLinearVelocity
+					local hv = Vector3.new(vel.X, 0, vel.Z)
 					if d < 0.3 then
+						if st.frozenFor == 0 and st.prevHV and st.prevHV.Magnitude > 14 then
+							st.dirBefore = st.prevHV.Unit  -- กำลังวิ่งอยู่แล้วค้าง
+						end
 						st.frozenFor += TICK
 					else
+						if settled and st.dirBefore and st.frozenFor >= 0.3 and st.frozenFor <= 1.5
+							and d >= 1 and d <= 40 then
+							local step = Vector3.new(pos.X - st.lastPos.X, 0, pos.Z - st.lastPos.Z)
+							if step.Magnitude > 0.1 and step.Unit:Dot(st.dirBefore) > 0.8 then
+								table.insert(st.stutters, os.clock())
+							end
+						end
+						st.dirBefore = nil
 						if settled then
 							if kinds.lag then
 								if d > TELEPORT_DIST then
@@ -142,6 +199,7 @@ do
 					if kinds.fly and settled and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
 
 					st.lastPos = pos
+					st.prevHV = hv
 					refreshTag(pl, st, root)
 				end
 			end
@@ -177,3 +235,5 @@ do
 		end
 	end
 end
+
+OPT.setDetect(true)

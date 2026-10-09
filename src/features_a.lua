@@ -509,6 +509,17 @@ do
 							.. tr("เลือด") .. " " .. hpText .. " | " .. dist .. " studs\n"
 							.. tr("ถือ:") .. " " .. (tool and tool.Name or tr("ไม่มี"))
 						o.atext.Text = p.DisplayName .. " " .. dist .. "m"
+
+						-- สีตามระดับความเสี่ยงจากตัวตรวจจับ (ถ้าเปิดอยู่)
+						local tier = OPT.riskInfo and OPT.riskInfo(p)
+						local c = tier and tier.color or WHITE
+						o.hl.FillColor = c
+						o.hl.OutlineColor = c
+						o.box.Color3 = c
+						o.label.TextColor3 = c
+						o.tri.TextColor3 = c
+						o.atext.TextColor3 = c
+						if tier then o.label.Text = tr(tier.text) .. "\n" .. o.label.Text end
 					end
 				elseif o then
 					removeEsp(p)
