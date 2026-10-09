@@ -8,7 +8,7 @@ local PARTS = {
 local bodies, pending, failed = {}, #PARTS, nil
 for i, name in ipairs(PARTS) do
 	task.spawn(function()
-		local ok, body = pcall(function() return game:HttpGet(BASE .. name .. ".lua") end)
+		local ok, body = pcall(function() return game:HttpGet(BASE .. name .. ".lua?v=" .. os.time()) end)
 		if ok and type(body) == "string" and #body > 0 then
 			bodies[i] = body
 		else
