@@ -60,6 +60,17 @@ local function renderMisc(parent)
 		function() return OPT.getDetect() end,
 		function(b) OPT.setDetect(b) end)
 
+	local r6b = gridRow(parent, 7, 3, 46)
+	makeSwitchCard(r6b[1], "ตรวจ: วาร์ป/ตัดเน็ต",
+		function() return OPT.getDetectKind("lag") end,
+		function(b) OPT.setDetectKind("lag", b) end)
+	makeSwitchCard(r6b[2], "ตรวจ: ความเร็ว",
+		function() return OPT.getDetectKind("speed") end,
+		function(b) OPT.setDetectKind("speed", b) end)
+	makeSwitchCard(r6b[3], "ตรวจ: ลอย/บิน",
+		function() return OPT.getDetectKind("fly") end,
+		function(b) OPT.setDetectKind("fly", b) end)
+
 	local r5 = gridRow(parent, 5, 1, 52)
 	local HOP_TXT = "ย้ายเซิร์ฟ (ต้องไม่โดนตี 1 นาที + เลือดเต็ม)"
 	local hopBtn = makeCellButton(r5[1], tr(HOP_TXT), ORANGE)

@@ -115,6 +115,7 @@ local EN = {
 	["กำลังเข้าร่วม..."] = "Joining...", ["เข้าร่วมไม่สำเร็จ (เกมอาจไม่อนุญาต)"] = "Join failed (game may block it)",
 	["โหลดรายชื่อเพื่อนไม่ได้"] = "Could not load friends", ["เพื่อนที่อยู่ในเกม"] = "Friends in game",
 	["ป้องกันปลิว"] = "Anti-fling",
+	["ตรวจ: วาร์ป/ตัดเน็ต"] = "Detect: teleport/lag", ["ตรวจ: ความเร็ว"] = "Detect: speed", ["ตรวจ: ลอย/บิน"] = "Detect: fly",
 	["ตรวจจับคนโกง (ป้ายเหนือหัว)"] = "Cheat detector (head tags)",
 	["ย้ายเซิร์ฟ (ต้องไม่โดนตี 1 นาที + เลือดเต็ม)"] = "Hop server (no hits for 1 min + full HP)",
 	["ไม่พบตัวละคร"] = "Character not found", ["เลือดยังไม่เต็ม"] = "Health not full",

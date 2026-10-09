@@ -6,11 +6,13 @@ do
 	local FREEZE_MIN = 0.4      -- นิ่งนานเท่านี้แล้วพุ่ง = น่าสงสัยโปรตัดเน็ต
 	local JUMP_AFTER_FREEZE = 12
 	local TELEPORT_DIST = 70    -- ขยับเกินนี้ในเสี้ยววิ = วาร์ป
-	local SPEED_LIMIT = 100     -- ความเร็วเฉลี่ยแนวราบ (studs/s)
-	local FLY_TIME = 3          -- ลอยกลางอากาศนิ่งๆ นานเท่านี้ = บิน
+	local SPEED_LIMIT = 150     -- ความเร็วเฉลี่ยแนวราบ (studs/s)
+	local FLY_TIME = 6          -- ลอยกลางอากาศนิ่งๆ นานเท่านี้ = บิน
 	local FLAG_TTL = 8
 
 	local on = false
+	-- เปิด/ปิดเป็นรายประเภท (ลอย/บิน ปิดไว้ก่อน เพราะบางเกมมีคนค้างลอยเอง)
+	local kinds = {lag = true, speed = true, fly = false}
 	local conn = nil
 	local acc = 0
 	local state = setmetatable({}, {__mode = "k"})   -- player -> data
@@ -105,10 +107,12 @@ do
 						st.frozenFor += TICK
 					else
 						if settled then
-							if d > TELEPORT_DIST then
-								flag(pl, st, root, "วาร์ป")
-							elseif st.frozenFor >= FREEZE_MIN and d > JUMP_AFTER_FREEZE then
-								flag(pl, st, root, "น่าสงสัยโปรตัดเน็ต")
+							if kinds.lag then
+								if d > TELEPORT_DIST then
+									flag(pl, st, root, "วาร์ป")
+								elseif st.frozenFor >= FREEZE_MIN and d > JUMP_AFTER_FREEZE then
+									flag(pl, st, root, "น่าสงสัยโปรตัดเน็ต")
+								end
 							end
 						end
 						st.frozenFor = 0
@@ -124,7 +128,7 @@ do
 					local first = st.hist[1]
 					if settled and first and now - first.t > 0.7 then
 						local h = Vector3.new(pos.X - first.p.X, 0, pos.Z - first.p.Z).Magnitude / (now - first.t)
-						if h > SPEED_LIMIT then flag(pl, st, root, "ความเร็วผิดปกติ") end
+						if kinds.speed and h > SPEED_LIMIT then flag(pl, st, root, "ความเร็วผิดปกติ") end
 					end
 
 					-- ลอยกลางอากาศนิ่งๆ นาน = บิน
@@ -135,7 +139,7 @@ do
 					else
 						st.airFor = 0
 					end
-					if settled and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
+					if kinds.fly and settled and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
 
 					st.lastPos = pos
 					refreshTag(pl, st, root)
@@ -162,4 +166,14 @@ do
 		end
 	end
 	function OPT.getDetect() return on end
+	function OPT.getDetectKind(k) return kinds[k] end
+	function OPT.setDetectKind(k, v)
+		kinds[k] = v and true or false
+		if not v then
+			local label = ({lag = {"วาร์ป", "น่าสงสัยโปรตัดเน็ต"}, speed = {"ความเร็วผิดปกติ"}, fly = {"ลอย/บิน?"}})[k]
+			for _, st in pairs(state) do
+				if label then for _, r in ipairs(label) do st.flags[r] = nil end end
+			end
+		end
+	end
 end
