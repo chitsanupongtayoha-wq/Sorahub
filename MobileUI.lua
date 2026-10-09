@@ -66,8 +66,8 @@ local OPT = {
 	FPS_CAP = 240,
 	REC_MAX = 600,
 	SAVE_FILE = "MobileUI_settings.json",
-	CLICK_DX = 0,
-	CLICK_DY = 0,
+	CLICK_DX = 50,
+	CLICK_DY = -10,
 }
 local aimRange = 200
 
