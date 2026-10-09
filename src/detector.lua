@@ -161,6 +161,10 @@ do
 					end
 					local settled = now - st.born > 3
 
+					-- ลอยอยู่กลางอากาศ = อาจเป็นผลบินได้ (สายฟ้า/มังกร ฯลฯ) ไม่นับวาร์ป/ความเร็ว/ตัดเน็ต
+					local gHit = workspace:Raycast(pos, Vector3.new(0, -15, 0), rayParams)
+					local air = gHit == nil
+
 					local vel = root.AssemblyLinearVelocity
 					local hv = Vector3.new(vel.X, 0, vel.Z)
 					if d < 0.3 then
@@ -169,7 +173,7 @@ do
 						end
 						st.frozenFor += TICK
 					else
-						if settled and st.dirBefore and st.frozenFor >= 0.3 and st.frozenFor <= 1.5
+						if settled and not air and st.dirBefore and st.frozenFor >= 0.3 and st.frozenFor <= 1.5
 							and d >= 1 and d <= 40 then
 							local step = Vector3.new(pos.X - st.lastPos.X, 0, pos.Z - st.lastPos.Z)
 							if step.Magnitude > 0.1 and step.Unit:Dot(st.dirBefore) > 0.8 then
@@ -177,7 +181,7 @@ do
 							end
 						end
 						st.dirBefore = nil
-						if settled then
+						if settled and not air then
 							if kinds.lag then
 								if d > TELEPORT_DIST then
 									flag(pl, st, root, "วาร์ป")
@@ -199,11 +203,11 @@ do
 					local first = st.hist[1]
 					if settled and first and now - first.t > 0.7 then
 						local h = Vector3.new(pos.X - first.p.X, 0, pos.Z - first.p.Z).Magnitude / (now - first.t)
-						if kinds.speed and h > SPEED_LIMIT then flag(pl, st, root, "ความเร็วผิดปกติ") end
+						if kinds.speed and not air and h > SPEED_LIMIT then flag(pl, st, root, "ความเร็วผิดปกติ") end
 					end
 
 					-- ลอยกลางอากาศนิ่งๆ นาน = บิน
-					local hit = workspace:Raycast(pos, Vector3.new(0, -15, 0), rayParams)
+					local hit = gHit
 					local vy = root.AssemblyLinearVelocity.Y
 					if not hit and vy > -15 and hum:GetState() ~= Enum.HumanoidStateType.Jumping then
 						st.airFor += TICK
