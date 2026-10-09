@@ -424,7 +424,7 @@ do
 
 		local bb = Instance.new("BillboardGui")
 		bb.Adornee = head
-		bb.Size = UDim2.fromOffset(220, 64)
+		bb.Size = UDim2.fromOffset(240, 100)
 		bb.StudsOffset = Vector3.new(0, 2.8, 0)
 		bb.AlwaysOnTop = true
 		bb.Parent = gui
@@ -508,6 +508,8 @@ do
 						o.label.Text = p.DisplayName .. " (@" .. p.Name .. ")\n"
 							.. tr("เลือด") .. " " .. hpText .. " | " .. dist .. " studs\n"
 							.. tr("ถือ:") .. " " .. (tool and tool.Name or tr("ไม่มี"))
+						local extra = OPT.infoLine and OPT.infoLine(p)
+						if extra then o.label.Text = o.label.Text .. "\n" .. extra end
 						o.atext.Text = p.DisplayName .. " " .. dist .. "m"
 
 						-- สีตามระดับความเสี่ยงจากตัวตรวจจับ (ถ้าเปิดอยู่)

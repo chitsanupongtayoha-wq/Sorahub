@@ -11,6 +11,37 @@ do
 	local FLAG_TTL = 8
 	local RANGE = 300           -- ไกลกว่านี้เกมส่งตำแหน่งมาห่างและกระตุก ไม่ตรวจ (กันขึ้นมั่ว)
 
+	-- ผลปีศาจที่เร็ว/วาร์ปได้เป็นปกติ: ขยายเกณฑ์ให้ ×3 (แก้ชื่อเพิ่มได้ตามต้องการ ตัวพิมพ์เล็ก)
+	local FAST_FRUITS = {"lightning", "light", "fire", "string", "thread", "dragon"}
+	local FAST_SCALE = 3
+
+	-- อ่านชื่อผล/สไตล์ต่อสู้จากข้อมูลที่เกมแปะไว้ที่ผู้เล่น (Player.Data.Stats)
+	local function statValue(pl, name)
+		local ok, v = pcall(function()
+			local data = pl:FindFirstChild("Data")
+			local stats = data and data:FindFirstChild("Stats")
+			local o = stats and stats:FindFirstChild(name)
+			return o and o.Value
+		end)
+		return ok and v or nil
+	end
+	local function fruitOf(pl) return statValue(pl, "Current_DevilFruit") end
+	local function scaleFor(pl)
+		local f = fruitOf(pl)
+		if type(f) == "string" then
+			f = f:lower()
+			for _, k in ipairs(FAST_FRUITS) do
+				if f:find(k, 1, true) then return FAST_SCALE end
+			end
+		end
+		return 1
+	end
+	function OPT.infoLine(pl)
+		local f, st = fruitOf(pl), statValue(pl, "Current_FightingStyle")
+		if not f and not st then return nil end
+		return "ผล: " .. tostring(f or "-") .. " | สไตล์: " .. tostring(st or "-")
+	end
+
 	local on = false
 	-- เปิด/ปิดเป็นรายประเภท (ลอย/บิน ปิดไว้ก่อน เพราะบางเกมมีคนค้างลอยเอง)
 	local kinds = {lag = true, speed = true, fly = false}
@@ -160,6 +191,7 @@ do
 						continue
 					end
 					local settled = now - st.born > 3
+					local sc = scaleFor(pl)
 
 					-- ลอยอยู่กลางอากาศ = อาจเป็นผลบินได้ (สายฟ้า/มังกร ฯลฯ) ไม่นับวาร์ป/ความเร็ว/ตัดเน็ต
 					local gHit = workspace:Raycast(pos, Vector3.new(0, -15, 0), rayParams)
@@ -183,9 +215,9 @@ do
 						st.dirBefore = nil
 						if settled and not air then
 							if kinds.lag then
-								if d > TELEPORT_DIST then
+								if d > TELEPORT_DIST * sc then
 									flag(pl, st, root, "วาร์ป")
-								elseif st.frozenFor >= FREEZE_MIN and d > JUMP_AFTER_FREEZE then
+								elseif st.frozenFor >= FREEZE_MIN and d > JUMP_AFTER_FREEZE * sc then
 									flag(pl, st, root, "น่าสงสัยโปรตัดเน็ต")
 								end
 							end
@@ -194,7 +226,7 @@ do
 					end
 
 					-- ความเร็วเฉลี่ยแนวราบใน ~1 วิ (ไม่นับก้าวที่ถูกนับเป็นวาร์ปไปแล้ว)
-					if d <= TELEPORT_DIST and not (st.frozenFor == 0 and d > JUMP_AFTER_FREEZE) then
+					if d <= TELEPORT_DIST * sc and not (st.frozenFor == 0 and d > JUMP_AFTER_FREEZE * sc) then
 						table.insert(st.hist, {t = now, p = pos})
 					else
 						table.clear(st.hist)
@@ -203,7 +235,7 @@ do
 					local first = st.hist[1]
 					if settled and first and now - first.t > 0.7 then
 						local h = Vector3.new(pos.X - first.p.X, 0, pos.Z - first.p.Z).Magnitude / (now - first.t)
-						if kinds.speed and not air and h > SPEED_LIMIT then flag(pl, st, root, "ความเร็วผิดปกติ") end
+						if kinds.speed and not air and h > SPEED_LIMIT * sc then flag(pl, st, root, "ความเร็วผิดปกติ") end
 					end
 
 					-- ลอยกลางอากาศนิ่งๆ นาน = บิน
