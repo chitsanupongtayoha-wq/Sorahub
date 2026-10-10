@@ -130,6 +130,7 @@ local EN = {
 	["ส่งรายงานไม่สำเร็จ"] = "Report failed", ["ส่งรายงานแล้ว (Roblox เป็นผู้ตัดสินเอง)"] = "Report sent (Roblox decides the outcome)",
 	["🔴 โปรแน่นอน"] = "🔴 Definitely cheating", ["🟠 มีโอกาสสูง"] = "🟠 Likely cheating", ["🟡 มีความเสี่ยง"] = "🟡 Suspicious", ["🟢 ปกติ"] = "🟢 Normal", ["🔵 เครื่องกาก/แลคง่าย"] = "🔵 Laggy device",
 	["ตรวจ: วาร์ป/ตัดเน็ต"] = "Detect: teleport/lag", ["ตรวจ: ความเร็ว"] = "Detect: speed", ["ตรวจ: ลอย/บิน"] = "Detect: fly",
+	["เลือด NaN (อมตะ?)"] = "NaN health (immortal?)",
 	["ตรวจจับคนโกง (ป้ายเหนือหัว)"] = "Cheat detector (head tags)",
 	["ย้ายเซิร์ฟ (ต้องไม่โดนตี 1 นาที + เลือดเต็ม)"] = "Hop server (no hits for 1 min + full HP)",
 	["ไม่พบตัวละคร"] = "Character not found", ["เลือดยังไม่เต็ม"] = "Health not full",

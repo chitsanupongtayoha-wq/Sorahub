@@ -88,7 +88,7 @@ do
 		return b
 	end
 
-	local WEIGHT = {["วาร์ป"] = 3, ["น่าสงสัยโปรตัดเน็ต"] = 2, ["ความเร็วผิดปกติ"] = 2, ["ลอย/บิน?"] = 2}
+	local WEIGHT = {["วาร์ป"] = 3, ["น่าสงสัยโปรตัดเน็ต"] = 2, ["ความเร็วผิดปกติ"] = 2, ["ลอย/บิน?"] = 2, ["เลือด NaN (อมตะ?)"] = 4}
 	local WINDOW = 90
 
 	local function flag(pl, st, root, reason)
@@ -270,6 +270,7 @@ do
 						table.clear(st.flags)
 						removeTag(pl)
 					end
+					if hum.Health ~= hum.Health or hum.MaxHealth ~= hum.MaxHealth then flag(pl, st, root, "เลือด NaN (อมตะ?)") end
 					local pos = root.Position
 					local d = (pos - st.lastPos).Magnitude
 					if not refPos or (pos - refPos).Magnitude > RANGE then
