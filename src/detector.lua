@@ -136,6 +136,25 @@ do
 	end
 
 	-- คืนค่า tier ของผู้เล่น (nil ถ้าระบบตรวจจับปิดอยู่)
+	-- สรุปเหตุผลที่โดนจับใน 90 วิล่าสุด เช่น "วาร์ป×3, ลอย/บิน?×5"
+	function OPT.riskReasons(pl)
+		if not on then return nil end
+		local st = state[pl]
+		if not st or not st.events then return nil end
+		trim(st.events, os.clock())
+		local counts, order = {}, {}
+		for _, e in ipairs(st.events) do
+			if e.r then
+				if not counts[e.r] then counts[e.r] = 0; table.insert(order, e.r) end
+				counts[e.r] += 1
+			end
+		end
+		if #order == 0 then return nil end
+		local parts = {}
+		for _, r in ipairs(order) do table.insert(parts, r .. "×" .. counts[r]) end
+		return table.concat(parts, ", ")
+	end
+
 	function OPT.riskInfo(pl)
 		if not on then return nil end
 		local st = state[pl]
@@ -234,7 +253,7 @@ do
 						end
 						st.frozenFor += TICK
 					else
-						if settled and not air and st.dirBefore and st.frozenFor >= 0.3 and st.frozenFor <= 1.5
+						if settled and st.dirBefore and st.frozenFor >= 0.3 and st.frozenFor <= 1.5
 							and d >= 1 and d <= 40 then
 							local step = Vector3.new(pos.X - st.lastPos.X, 0, pos.Z - st.lastPos.Z)
 							if step.Magnitude > 0.1 and step.Unit:Dot(st.dirBefore) > 0.8 then
@@ -242,7 +261,7 @@ do
 							end
 						end
 						st.dirBefore = nil
-						if settled and not air then
+						if settled then
 							if kinds.lag then
 								if d > TELEPORT_DIST * sc then
 									flag(pl, st, root, "วาร์ป")
@@ -264,7 +283,7 @@ do
 					local first = st.hist[1]
 					if settled and first and now - first.t > 0.7 then
 						local h = Vector3.new(pos.X - first.p.X, 0, pos.Z - first.p.Z).Magnitude / (now - first.t)
-						if kinds.speed and not air and h > SPEED_LIMIT * sc then flag(pl, st, root, "ความเร็วผิดปกติ") end
+						if kinds.speed and h > SPEED_LIMIT * sc then flag(pl, st, root, "ความเร็วผิดปกติ") end
 					end
 
 					-- ลอยกลางอากาศนิ่งๆ นาน = บิน
