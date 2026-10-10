@@ -4,6 +4,7 @@ local baseTabs = {
 	{key = "view", name = "มุมมอง", render = renderView},
 	{key = "misc", name = "อื่นๆ", render = renderMisc},
 	{key = "replay", name = "รีเพลย์", render = function(p) renderReplay(p) end},
+	{key = "check", name = "ตรวจผู้เล่น", render = renderCheck},
 	{key = "friends", name = "เพื่อน", render = renderFriends},
 	{key = "settings", name = "ตั้งค่า", render = renderSettings},
 }

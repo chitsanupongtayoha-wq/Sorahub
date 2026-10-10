@@ -110,7 +110,8 @@ do
 	end
 
 	local TIERS = {
-		red = {color = Color3.fromRGB(255, 60, 60), text = "🔴 โปรแน่นอน"},
+		black = {color = Color3.fromRGB(0, 0, 0), stroke = Color3.new(1, 1, 1), text = "⚫ ตรวจแล้วโปรแน่"},
+		red = {color = Color3.fromRGB(255, 60, 60), text = "🔴 รอตรวจ"},
 		orange = {color = Color3.fromRGB(255, 150, 40), text = "🟠 มีโอกาสสูง"},
 		yellow = {color = Color3.fromRGB(255, 220, 60), text = "🟡 มีความเสี่ยง"},
 		green = {color = Color3.fromRGB(80, 220, 100), text = "🟢 ปกติ"},
@@ -136,27 +137,59 @@ do
 	end
 
 	-- คืนค่า tier ของผู้เล่น (nil ถ้าระบบตรวจจับปิดอยู่)
-	-- สรุปเหตุผลที่โดนจับใน 90 วิล่าสุด เช่น "วาร์ป×3, ลอย/บิน?×5"
-	function OPT.riskReasons(pl)
-		if not on then return nil end
-		local st = state[pl]
-		if not st or not st.events then return nil end
-		trim(st.events, os.clock())
-		local counts, order = {}, {}
-		for _, e in ipairs(st.events) do
-			if e.r then
-				if not counts[e.r] then counts[e.r] = 0; table.insert(order, e.r) end
-				counts[e.r] += 1
-			end
+	-- ===== บันทึกผลตรวจด้วยมือ (เก็บตาม UserId ลงไฟล์) =====
+	local MARK_FILE = "MobileUI_checked.json"
+	local marks = {}   -- [tostring(uid)] = {name, status = "cheat"/"normal"/"lag", cheats, reports, lastReport}
+	do
+		local ok, raw = pcall(function() return readfile(MARK_FILE) end)
+		if ok and type(raw) == "string" then
+			local ok2, d = pcall(function() return HttpService:JSONDecode(raw) end)
+			if ok2 and type(d) == "table" then marks = d end
 		end
-		if #order == 0 then return nil end
-		local parts = {}
-		for _, r in ipairs(order) do table.insert(parts, r .. "×" .. counts[r]) end
-		return table.concat(parts, ", ")
+	end
+	local function saveMarks()
+		pcall(function() writefile(MARK_FILE, HttpService:JSONEncode(marks)) end)
+	end
+	local function markOf(pl) return marks[tostring(pl.UserId)] end
+
+	function OPT.getMark(pl)
+		local m = markOf(pl)
+		return m and m.status or nil
+	end
+	function OPT.markStats(pl)
+		local m = markOf(pl)
+		return (m and m.cheats or 0), (m and m.reports or 0)
+	end
+	function OPT.setMark(pl, status)
+		local key = tostring(pl.UserId)
+		local m = marks[key]
+		if not m then m = {cheats = 0, reports = 0}; marks[key] = m end
+		m.name = pl.Name
+		if status == "cheat" and m.status ~= "cheat" then m.cheats = (m.cheats or 0) + 1 end
+		m.status = status
+		saveMarks()
 	end
 
-	function OPT.riskInfo(pl)
-		if not on then return nil end
+	-- ส่งรายงานผ่านระบบรายงานของ Roblox (เฉพาะคนที่ตรวจยืนยันแล้ว, 1 ครั้ง/คน/10 นาที, เว้น 20 วิระหว่างครั้ง)
+	local lastAnyReport = -math.huge
+	function OPT.reportPlayer(pl)
+		local m = markOf(pl)
+		if not m or m.status ~= "cheat" then return false, "ต้องกด \"โปรแล้ว\" ก่อนถึงรายงานได้" end
+		local now = os.time()
+		if now - (m.lastReport or 0) < 600 then return false, "เพิ่งรายงานคนนี้ไป รอสักพัก" end
+		if os.clock() - lastAnyReport < 20 then return false, "รอสักครู่ก่อนรายงานคนต่อไป" end
+		local ok = pcall(function()
+			Players:ReportAbuse(pl, "Cheating/Exploiting", "Suspected exploiting: abnormal movement observed in game")
+		end)
+		if not ok then return false, "ส่งรายงานไม่สำเร็จ" end
+		lastAnyReport = os.clock()
+		m.reports = (m.reports or 0) + 1
+		m.lastReport = now
+		saveMarks()
+		return true, "ส่งรายงานแล้ว (Roblox เป็นผู้ตัดสินเอง)"
+	end
+
+	function OPT.autoTier(pl)
 		local st = state[pl]
 		if not st or not st.events then return TIERS.green end
 		local now = os.clock()
@@ -169,6 +202,18 @@ do
 		if score >= 2 then return TIERS.yellow end
 		if #st.stutters >= 6 then return TIERS.blue end
 		return TIERS.green
+	end
+	function OPT.tierOf(pl)
+		local m = OPT.getMark(pl)
+		if m == "cheat" then return TIERS.black end
+		if m == "lag" then return TIERS.blue end
+		if m == "normal" then return TIERS.green end
+		return OPT.autoTier(pl)
+	end
+
+	function OPT.riskInfo(pl)
+		if not on then return nil end
+		return OPT.tierOf(pl)
 	end
 
 	local function refreshTag(pl, st, root)

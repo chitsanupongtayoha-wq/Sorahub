@@ -524,6 +524,10 @@ do
 						o.label.TextColor3 = c
 						o.tri.TextColor3 = c
 						o.atext.TextColor3 = c
+						local strokeC = (tier and tier.stroke) or Color3.new(0, 0, 0)
+						o.label.TextStrokeColor3 = strokeC
+						o.tri.TextStrokeColor3 = strokeC
+						o.atext.TextStrokeColor3 = strokeC
 						local why = OPT.riskReasons and OPT.riskReasons(p)
 						if tier then
 							o.label.Text = tr(tier.text) .. (why and (" (" .. why .. ")") or "") .. "\n" .. o.label.Text
