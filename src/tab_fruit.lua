@@ -48,7 +48,10 @@ local function renderFruit(parent)
 		local function scan(cont)
 			if not cont then return end
 			for _, t in ipairs(cont:GetChildren()) do
-				if t:IsA("Tool") and names[t.Name:lower()] then table.insert(list, t) end
+				local ln = t.Name:lower()
+				if t:IsA("Tool") and (names[ln] or ln:find("fruity", 1, true) or ln:find("fruit", 1, true)) then
+					table.insert(list, t)
+				end
 			end
 		end
 		scan(player:FindFirstChildOfClass("Backpack"))
