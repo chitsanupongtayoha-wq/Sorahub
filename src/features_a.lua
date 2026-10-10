@@ -503,7 +503,11 @@ do
 						local hum = char:FindFirstChildOfClass("Humanoid")
 						local root = char:FindFirstChild("HumanoidRootPart")
 						local tool = char:FindFirstChildOfClass("Tool")
-						local hpText = hum and (math.floor(hum.Health) .. "/" .. math.floor(hum.MaxHealth)) or "-"
+						local hpText = "-"
+						if hum then
+							local h, m = hum.Health, hum.MaxHealth
+							hpText = (h ~= h and "?" or tostring(math.floor(h))) .. "/" .. (m ~= m and "?" or tostring(math.floor(m)))
+						end
 						local refPos = myRoot and myRoot.Position
 						local camNow = workspace.CurrentCamera
 						if skyOn and camNow then refPos = camNow.CFrame.Position end
