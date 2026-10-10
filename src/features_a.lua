@@ -524,7 +524,10 @@ do
 						o.label.TextColor3 = c
 						o.tri.TextColor3 = c
 						o.atext.TextColor3 = c
-						if tier then o.label.Text = tr(tier.text) .. "\n" .. o.label.Text end
+						local why = OPT.riskReasons and OPT.riskReasons(p)
+						if tier then
+							o.label.Text = tr(tier.text) .. (why and (" (" .. why .. ")") or "") .. "\n" .. o.label.Text
+						end
 					end
 				elseif o then
 					removeEsp(p)

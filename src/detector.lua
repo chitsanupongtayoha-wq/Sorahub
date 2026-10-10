@@ -12,7 +12,7 @@ do
 	local RANGE = 300           -- ไกลกว่านี้เกมส่งตำแหน่งมาห่างและกระตุก ไม่ตรวจ (กันขึ้นมั่ว)
 
 	-- ผลปีศาจที่เร็ว/วาร์ปได้เป็นปกติ: ขยายเกณฑ์ให้ ×3 (แก้ชื่อเพิ่มได้ตามต้องการ ตัวพิมพ์เล็ก)
-	local FAST_FRUITS = {"lightning", "light", "fire", "string", "thread", "dragon"}
+	local FAST_FRUITS = {}   -- ว่างไว้ = ไม่ยกเว้นผลไหนเลย (ใส่ชื่อผลตัวพิมพ์เล็กเพื่อยกเว้นได้)
 	local FAST_SCALE = 3
 
 	-- อ่านชื่อผล/สไตล์ต่อสู้จากข้อมูลที่เกมแปะไว้ที่ผู้เล่น (Player.Data.Stats)
@@ -97,7 +97,7 @@ do
 		-- บันทึกเป็น "เหตุการณ์" สำหรับคิดคะแนนความเสี่ยง (กันนับซ้ำภายใน 2 วิ)
 		if now - (st.lastEv[reason] or -math.huge) > 2 then
 			st.lastEv[reason] = now
-			table.insert(st.events, {t = now, w = WEIGHT[reason] or 1})
+			table.insert(st.events, {t = now, w = WEIGHT[reason] or 1, r = reason})
 		end
 	end
 
@@ -116,6 +116,24 @@ do
 		green = {color = Color3.fromRGB(80, 220, 100), text = "🟢 ปกติ"},
 		blue = {color = Color3.fromRGB(80, 170, 255), text = "🔵 เครื่องกาก/แลคง่าย"},
 	}
+
+	-- สรุปเหตุผลที่ถูกจับใน 90 วิล่าสุด เช่น "วาร์ป x3, ลอย/บิน? x5"
+	function OPT.riskReasons(pl)
+		local st = state[pl]
+		if not st or not st.events or #st.events == 0 then return nil end
+		trim(st.events, os.clock())
+		local count, order = {}, {}
+		for _, e in ipairs(st.events) do
+			if e.r then
+				if not count[e.r] then count[e.r] = 0; table.insert(order, e.r) end
+				count[e.r] += 1
+			end
+		end
+		if #order == 0 then return nil end
+		local parts = {}
+		for _, r in ipairs(order) do table.insert(parts, r .. " x" .. count[r]) end
+		return table.concat(parts, ", ")
+	end
 
 	-- คืนค่า tier ของผู้เล่น (nil ถ้าระบบตรวจจับปิดอยู่)
 	function OPT.riskInfo(pl)
@@ -257,7 +275,7 @@ do
 					else
 						st.airFor = 0
 					end
-					if kinds.fly and settled and sc == 1 and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
+					if kinds.fly and settled and st.airFor >= FLY_TIME then flag(pl, st, root, "ลอย/บิน?") end
 
 					st.lastPos = pos
 					st.prevHV = hv
