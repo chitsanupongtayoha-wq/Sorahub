@@ -1,0 +1,212 @@
+
+-- ===== แท็บผลปีศาจ: ดูของในกระเป๋า + ทิ้งผลที่ไม่เก็บ (มีรายการตรวจก่อน + กดยืนยัน) =====
+local FRUIT_FILE = "MobileUI_fruitkeep.json"
+local FRUIT_DEFAULT_KEEP = "lightning, fire, mochi, quake, dragon, light, sans"
+local fruitKeepText = FRUIT_DEFAULT_KEEP
+do
+	local ok, raw = pcall(function() return readfile(FRUIT_FILE) end)
+	if ok and type(raw) == "string" then
+		local ok2, d = pcall(function() return HttpService:JSONDecode(raw) end)
+		if ok2 and type(d) == "table" and type(d.keep) == "string" then fruitKeepText = d.keep end
+	end
+end
+
+local function renderFruit(parent)
+	local VIM = nil
+	pcall(function() VIM = game:GetService("VirtualInputManager") end)
+
+	local function keepTokens()
+		local t = {}
+		for tok in tostring(fruitKeepText):gmatch("[^,]+") do
+			tok = tok:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+			if tok ~= "" then table.insert(t, tok) end
+		end
+		return t
+	end
+
+	local function shouldKeep(name)
+		local n = name:lower()
+		for _, tok in ipairs(keepTokens()) do
+			if n:find(tok, 1, true) then return true end
+		end
+		return false
+	end
+
+	-- ชื่อผลที่เกมเก็บไว้ใน Player.Data.Storage.Fruity
+	local function fruitNames()
+		local set = {}
+		pcall(function()
+			local f = player.Data.Storage.Fruity
+			for _, c in ipairs(f:GetChildren()) do set[c.Name:lower()] = true end
+		end)
+		return set
+	end
+
+	local function collectFruitTools()
+		local names = fruitNames()
+		local list = {}
+		local function scan(cont)
+			if not cont then return end
+			for _, t in ipairs(cont:GetChildren()) do
+				if t:IsA("Tool") and names[t.Name:lower()] then table.insert(list, t) end
+			end
+		end
+		scan(player:FindFirstChildOfClass("Backpack"))
+		scan(player.Character)
+		return list
+	end
+
+	-- แถวบน: ช่องแก้รายการที่เก็บ
+	local r1 = gridRow(parent, 1, 1, 56)
+	local card = Instance.new("Frame")
+	card.Size = UDim2.fromScale(1, 1)
+	card.BackgroundColor3 = BG2
+	card.Parent = r1[1]
+	round(card, 12)
+	outline(card, BORDER, 1)
+	local lab = Instance.new("TextLabel")
+	lab.BackgroundTransparency = 1
+	lab.Position = UDim2.fromOffset(10, 0)
+	lab.Size = UDim2.new(0.28, 0, 1, 0)
+	lab.TextXAlignment = Enum.TextXAlignment.Left
+	lab.Text = tr("ผลที่เก็บ (คั่นด้วย ,)")
+	lab.TextColor3 = WHITE
+	lab.Font = Enum.Font.GothamBold
+	lab.TextSize = 13
+	lab.TextWrapped = true
+	lab.Parent = card
+	local box = Instance.new("TextBox")
+	box.AnchorPoint = Vector2.new(1, 0.5)
+	box.Position = UDim2.new(1, -8, 0.5, 0)
+	box.Size = UDim2.new(0.68, 0, 0, 38)
+	box.BackgroundColor3 = BG
+	box.Text = fruitKeepText
+	box.TextColor3 = WHITE
+	box.Font = Enum.Font.GothamMedium
+	box.TextSize = 13
+	box.ClearTextOnFocus = false
+	box.TextTruncate = Enum.TextTruncate.AtEnd
+	box.Parent = card
+	round(box, 10)
+
+	local r2 = gridRow(parent, 2, 2, 46)
+	local refreshBtn = makeCellButton(r2[1], tr("รีเฟรชรายการ"), ACCENT)
+	local dropBtn = makeCellButton(r2[2], tr("ทิ้งผลที่ไม่เก็บ"), RED)
+
+	local r3 = gridRow(parent, 3, 1, 34)
+	local status = Instance.new("TextLabel")
+	status.Size = UDim2.fromScale(1, 1)
+	status.BackgroundTransparency = 1
+	status.TextColor3 = Color3.fromRGB(170, 170, 180)
+	status.Font = Enum.Font.GothamMedium
+	status.TextSize = 13
+	status.TextWrapped = true
+	status.Text = ""
+	status.Parent = r3[1]
+
+	local rows = {}
+	local toDrop = {}
+
+	local function rebuild()
+		for _, r in ipairs(rows) do r:Destroy() end
+		table.clear(rows)
+		table.clear(toDrop)
+		local tools = collectFruitTools()
+		table.sort(tools, function(a, b) return a.Name < b.Name end)
+		local keepN, dropN = 0, 0
+		for i, t in ipairs(tools) do
+			local keep = shouldKeep(t.Name)
+			if keep then keepN += 1 else dropN += 1; table.insert(toDrop, t) end
+			local row = Instance.new("Frame")
+			row.LayoutOrder = 10 + i
+			row.Size = UDim2.new(1, -8, 0, 34)
+			row.BackgroundColor3 = BG2
+			row.Parent = parent
+			round(row, 10)
+			table.insert(rows, row)
+			local l = Instance.new("TextLabel")
+			l.BackgroundTransparency = 1
+			l.Position = UDim2.fromOffset(10, 0)
+			l.Size = UDim2.new(1, -90, 1, 0)
+			l.TextXAlignment = Enum.TextXAlignment.Left
+			l.Text = t.Name
+			l.TextColor3 = WHITE
+			l.Font = Enum.Font.GothamMedium
+			l.TextSize = 14
+			l.TextTruncate = Enum.TextTruncate.AtEnd
+			l.Parent = row
+			local tag = Instance.new("TextLabel")
+			tag.AnchorPoint = Vector2.new(1, 0.5)
+			tag.Position = UDim2.new(1, -8, 0.5, 0)
+			tag.Size = UDim2.fromOffset(70, 24)
+			tag.BackgroundColor3 = keep and GREEN or RED
+			tag.Text = keep and tr("เก็บ") or tr("จะทิ้ง")
+			tag.TextColor3 = WHITE
+			tag.Font = Enum.Font.GothamBold
+			tag.TextSize = 13
+			tag.Parent = row
+			round(tag, 8)
+		end
+		if #tools == 0 then
+			status.Text = tr("ไม่พบผลปีศาจในกระเป๋า (หรือเกมเก็บไว้คนละที่)")
+		else
+			status.Text = tr("เก็บ") .. " " .. keepN .. " | " .. tr("จะทิ้ง") .. " " .. dropN
+		end
+		dropBtn.Text = tr("ทิ้งผลที่ไม่เก็บ")
+		if OPT.themeHook then OPT.themeHook() end
+	end
+
+	box.FocusLost:Connect(function()
+		fruitKeepText = box.Text
+		pcall(function() writefile(FRUIT_FILE, HttpService:JSONEncode({keep = fruitKeepText})) end)
+		rebuild()
+	end)
+	refreshBtn.MouseButton1Click:Connect(rebuild)
+
+	local armed, busy = false, false
+	dropBtn.MouseButton1Click:Connect(function()
+		if busy then return end
+		if #toDrop == 0 then status.Text = tr("ไม่มีผลที่ต้องทิ้ง"); return end
+		if not armed then
+			armed = true
+			dropBtn.Text = tr("กดอีกครั้งเพื่อยืนยันทิ้ง") .. " " .. #toDrop
+			task.delay(4, function()
+				if armed and dropBtn.Parent then armed = false; dropBtn.Text = tr("ทิ้งผลที่ไม่เก็บ") end
+			end)
+			return
+		end
+		armed = false
+		busy = true
+		task.spawn(function()
+			local dropped, failed = 0, nil
+			local list = table.clone(toDrop)
+			for _, tool in ipairs(list) do
+				-- ตรวจซ้ำก่อนทิ้งทุกชิ้น กันทิ้งผลที่ควรเก็บ
+				if shouldKeep(tool.Name) then continue end
+				local char = player.Character
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				if not hum or not tool.Parent then failed = tool.Name; break end
+				pcall(function() hum:EquipTool(tool) end)
+				task.wait(0.4)
+				if VIM then
+					pcall(function() VIM:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game) end)
+					task.wait(0.05)
+					pcall(function() VIM:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game) end)
+				end
+				task.wait(0.6)
+				local stillMine = tool.Parent == player.Character or tool.Parent == player:FindFirstChildOfClass("Backpack")
+				if stillMine then failed = tool.Name; break end
+				dropped += 1
+			end
+			busy = false
+			if dropBtn.Parent then
+				status.Text = failed and (tr("ทิ้งไม่ได้ที่") .. ": " .. failed .. " (" .. tr("เกมอาจไม่อนุญาตให้ทิ้ง") .. ")")
+					or (tr("ทิ้งแล้ว") .. " " .. dropped)
+				rebuild()
+				if failed then status.Text = tr("ทิ้งไม่ได้ที่") .. ": " .. failed .. " (" .. tr("เกมอาจไม่อนุญาตให้ทิ้ง") .. ")" end
+			end
+		end)
+	end)
+
+	rebuild()
+end
