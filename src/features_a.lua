@@ -504,7 +504,10 @@ do
 						local root = char:FindFirstChild("HumanoidRootPart")
 						local tool = char:FindFirstChildOfClass("Tool")
 						local hpText = hum and (math.floor(hum.Health) .. "/" .. math.floor(hum.MaxHealth)) or "-"
-						local dist = (myRoot and root) and math.floor((root.Position - myRoot.Position).Magnitude) or 0
+						local refPos = myRoot and myRoot.Position
+						local camNow = workspace.CurrentCamera
+						if skyOn and camNow then refPos = camNow.CFrame.Position end
+						local dist = (refPos and root) and math.floor((root.Position - refPos).Magnitude) or 0
 						o.label.Text = p.DisplayName .. " (@" .. p.Name .. ")\n"
 							.. tr("เลือด") .. " " .. hpText .. " | " .. dist .. " studs\n"
 							.. tr("ถือ:") .. " " .. (tool and tool.Name or tr("ไม่มี"))

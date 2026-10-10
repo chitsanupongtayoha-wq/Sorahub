@@ -158,6 +158,9 @@ do
 		rayParams.FilterDescendantsInstances = {player.Character}
 		local myChar = player.Character
 		local myRootPart = myChar and myChar:FindFirstChild("HumanoidRootPart")
+		-- ตอนลอยฟ้า ตัวจริงอยู่สูง 100000 แต่กล้องอยู่ที่พื้น จึงวัดระยะจากกล้องแทน
+		local cam = workspace.CurrentCamera
+		local refPos = (skyOn and cam) and cam.CFrame.Position or (myRootPart and myRootPart.Position)
 		for _, pl in ipairs(Players:GetPlayers()) do
 			if pl ~= player then
 				local char = pl.Character
@@ -187,7 +190,7 @@ do
 					end
 					local pos = root.Position
 					local d = (pos - st.lastPos).Magnitude
-					if not myRootPart or skyOn or (pos - myRootPart.Position).Magnitude > RANGE then
+					if not refPos or (pos - refPos).Magnitude > RANGE then
 						-- ไกลเกินไป: ข้อมูลตำแหน่งไม่แม่น ข้ามรอบนี้และเริ่มนับ "นิ่ง" ใหม่ตอนกลับเข้าใกล้
 						st.born = now
 						st.lastPos = pos
