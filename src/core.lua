@@ -94,6 +94,8 @@ local EN = {
 	["ไม่พบผู้เล่นชื่อนี้"] = "Player not found", ["ไม่พบผู้เล่น"] = "No players",
 	["ส่องกล้องเป้าหมาย"] = "Spectate target",
 	["วาร์ปไปด้านหลังเป้าหมาย"] = "Teleport behind target",
+	["รายงานบิน"] = "Report fly", ["รายงานวาร์ป"] = "Report teleport", ["รายงานเกรียน"] = "Report trolling",
+	["แสดงเฉพาะคนที่มาร์กดำ (กด \"โปรแล้ว\" ในแท็บตรวจผู้เล่น) | รายงาน 1 ครั้ง/คน/10 นาที"] = "Only black-marked players (press \"Cheater\" in Check tab) | 1 report/player/10 min",
 	["ถือ:"] = "Holding:", ["ไม่มี"] = "none",
 	["กันหลุด (Anti-AFK)"] = "Anti-AFK", ["ลอยฟ้า 100000"] = "Sky 100000",
 	["ถือของทั้งหมด (Equip All)"] = "Equip all tools", ["บูส FPS"] = "FPS boost",

@@ -2,7 +2,7 @@
 local BASE = "https://raw.githubusercontent.com/chitsanupongtayoha-wq/Sorahub/main/src/"
 local PARTS = {
 	"core", "tab_profile", "features_a", "tab_replay", "features_b", "safety", "detector",
-	"tab_player", "tab_view", "tab_misc", "look", "tab_settings", "tab_friends", "tab_check", "tab_fruit", "main",
+	"tab_player", "tab_view", "tab_misc", "look", "tab_settings", "tab_friends", "tab_check", "tab_report", "tab_fruit", "main",
 }
 
 local bodies, pending, failed = {}, #PARTS, nil

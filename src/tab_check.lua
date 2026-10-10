@@ -1,5 +1,5 @@
 
--- ===== แท็บตรวจผู้เล่น: ติดป้าย ปกติ / เครื่องกาก / ตรวจแล้วโปร + รายงาน =====
+-- ===== แท็บตรวจผู้เล่น: ติดป้าย ปกติ / เครื่องกาก / ตรวจแล้วโปร (รายงานอยู่แท็บรายงาน) =====
 local function renderCheck(parent)
 	local TIER_ORDER = {"⚫", "🔴", "🟠", "🟡", "🔵", "🟢"}
 
@@ -47,8 +47,6 @@ local function renderCheck(parent)
 		local cheats, reports = OPT.markStats(pl)
 		c.stat.Text = tr("ตรวจเจอโปร") .. " " .. cheats .. " " .. tr("ครั้ง") .. " | "
 			.. tr("รายงานแล้ว") .. " " .. reports .. " " .. tr("ครั้ง")
-		local mark = OPT.getMark(pl)
-		c.report.BackgroundColor3 = (mark == "cheat") and RED or GRAY
 	end
 
 	local function refreshSummary()
@@ -64,7 +62,7 @@ local function renderCheck(parent)
 
 	local function makeBtn(parentFrame, text, color)
 		local b = Instance.new("TextButton")
-		b.Size = UDim2.new(0.25, -6, 1, 0)
+		b.Size = UDim2.new(1/3, -6, 1, 0)
 		b.BackgroundColor3 = color
 		b.Text = tr(text)
 		b.TextColor3 = WHITE
@@ -146,9 +144,8 @@ local function renderCheck(parent)
 			local normalB = makeBtn(btnRow, "ปกติ", GREEN)
 			local lagB = makeBtn(btnRow, "เครื่องกาก", Color3.fromRGB(60, 120, 200))
 			local cheatB = makeBtn(btnRow, "โปรแล้ว", Color3.fromRGB(30, 30, 30))
-			local reportB = makeBtn(btnRow, "รายงาน", GRAY)
 
-			local c = {pl = pl, frame = frame, tierLabel = tierL, stat = statL, report = reportB}
+			local c = {pl = pl, frame = frame, tierLabel = tierL, stat = statL}
 			table.insert(cards, c)
 
 			normalB.MouseButton1Click:Connect(function()
@@ -159,11 +156,6 @@ local function renderCheck(parent)
 			end)
 			cheatB.MouseButton1Click:Connect(function()
 				OPT.setMark(pl, "cheat"); refreshCard(c); refreshSummary()
-			end)
-			reportB.MouseButton1Click:Connect(function()
-				local ok, text = OPT.reportPlayer(pl)
-				msg.Text = tr(text)
-				refreshCard(c)
 			end)
 			refreshCard(c)
 		end

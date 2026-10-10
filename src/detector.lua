@@ -172,15 +172,20 @@ do
 
 	-- ส่งรายงานผ่านระบบรายงานของ Roblox (เฉพาะคนที่ตรวจยืนยันแล้ว, 1 ครั้ง/คน/10 นาที, เว้น 20 วิระหว่างครั้ง)
 	local lastAnyReport = -math.huge
-	function OPT.reportPlayer(pl)
+	local REPORT_KINDS = {
+		fly = {"Cheating/Exploiting", "Suspected exploiting: flying observed in game"},
+		warp = {"Cheating/Exploiting", "Suspected exploiting: teleporting observed in game"},
+		troll = {"Bullying", "Disruptive/trolling behavior toward other players observed in game"},
+	}
+	function OPT.reportPlayer(pl, kind)
+		local rk = REPORT_KINDS[kind or "fly"]
+		if not rk then return false, "ส่งรายงานไม่สำเร็จ" end
 		local m = markOf(pl)
 		if not m or m.status ~= "cheat" then return false, "ต้องกด \"โปรแล้ว\" ก่อนถึงรายงานได้" end
 		local now = os.time()
 		if now - (m.lastReport or 0) < 600 then return false, "เพิ่งรายงานคนนี้ไป รอสักพัก" end
 		if os.clock() - lastAnyReport < 20 then return false, "รอสักครู่ก่อนรายงานคนต่อไป" end
-		local ok = pcall(function()
-			Players:ReportAbuse(pl, "Cheating/Exploiting", "Suspected exploiting: abnormal movement observed in game")
-		end)
+		local ok = pcall(function() Players:ReportAbuse(pl, rk[1], rk[2]) end)
 		if not ok then return false, "ส่งรายงานไม่สำเร็จ" end
 		lastAnyReport = os.clock()
 		m.reports = (m.reports or 0) + 1
