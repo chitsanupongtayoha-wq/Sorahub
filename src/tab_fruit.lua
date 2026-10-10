@@ -92,9 +92,10 @@ local function renderFruit(parent)
 	box.Parent = card
 	round(box, 10)
 
-	local r2 = gridRow(parent, 2, 2, 46)
+	local r2 = gridRow(parent, 2, 3, 46)
 	local refreshBtn = makeCellButton(r2[1], tr("รีเฟรชรายการ"), ACCENT)
-	local dropBtn = makeCellButton(r2[2], tr("ทิ้งผลที่ไม่เก็บ"), RED)
+	local dropBtn = makeCellButton(r2[2], tr("ซ่อนผลที่ไม่เก็บ"), RED)
+	local restoreBtn = makeCellButton(r2[3], tr("คืนผลที่ซ่อน"), GRAY)
 
 	local r3 = gridRow(parent, 3, 1, 34)
 	local status = Instance.new("TextLabel")
@@ -155,7 +156,7 @@ local function renderFruit(parent)
 		else
 			status.Text = tr("เก็บ") .. " " .. keepN .. " | " .. tr("จะทิ้ง") .. " " .. dropN
 		end
-		dropBtn.Text = tr("ทิ้งผลที่ไม่เก็บ")
+		dropBtn.Text = tr("ซ่อนผลที่ไม่เก็บ")
 		if OPT.themeHook then OPT.themeHook() end
 	end
 
@@ -166,49 +167,54 @@ local function renderFruit(parent)
 	end)
 	refreshBtn.MouseButton1Click:Connect(rebuild)
 
-	local armed, busy = false, false
+	-- เกมนี้ไม่ให้ทิ้งไอเทมจริง (CanBeDropped=false และไม่มี Remote ทิ้ง) จึง "ซ่อน" จากกระเป๋าฝั่งเราแทน
+	-- ไม่ได้ลบจริงที่เซิร์ฟเวอร์ กด "คืน" หรือเกิดใหม่/ออกเกมแล้วเข้าใหม่ก็กลับมา
+	OPT.fruitStash = OPT.fruitStash or {}
+	local stashFolder = gui:FindFirstChild("SoraFruitStash")
+	if not stashFolder then
+		stashFolder = Instance.new("Folder")
+		stashFolder.Name = "SoraFruitStash"
+		stashFolder.Parent = gui
+	end
+
+	local armed = false
 	dropBtn.MouseButton1Click:Connect(function()
-		if busy then return end
-		if #toDrop == 0 then status.Text = tr("ไม่มีผลที่ต้องทิ้ง"); return end
+		if #toDrop == 0 then status.Text = tr("ไม่มีผลที่ต้องซ่อน"); return end
 		if not armed then
 			armed = true
-			dropBtn.Text = tr("กดอีกครั้งเพื่อยืนยันทิ้ง") .. " " .. #toDrop
+			dropBtn.Text = tr("กดอีกครั้งเพื่อยืนยันซ่อน") .. " " .. #toDrop
 			task.delay(4, function()
-				if armed and dropBtn.Parent then armed = false; dropBtn.Text = tr("ทิ้งผลที่ไม่เก็บ") end
+				if armed and dropBtn.Parent then armed = false; dropBtn.Text = tr("ซ่อนผลที่ไม่เก็บ") end
 			end)
 			return
 		end
 		armed = false
-		busy = true
-		task.spawn(function()
-			local dropped, failed = 0, nil
-			local list = table.clone(toDrop)
-			for _, tool in ipairs(list) do
-				-- ตรวจซ้ำก่อนทิ้งทุกชิ้น กันทิ้งผลที่ควรเก็บ
-				if shouldKeep(tool.Name) then continue end
-				local char = player.Character
-				local hum = char and char:FindFirstChildOfClass("Humanoid")
-				if not hum or not tool.Parent then failed = tool.Name; break end
-				pcall(function() hum:EquipTool(tool) end)
-				task.wait(0.4)
-				if VIM then
-					pcall(function() VIM:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game) end)
-					task.wait(0.05)
-					pcall(function() VIM:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game) end)
-				end
-				task.wait(0.6)
-				local stillMine = tool.Parent == player.Character or tool.Parent == player:FindFirstChildOfClass("Backpack")
-				if stillMine then failed = tool.Name; break end
-				dropped += 1
+		local n = 0
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		for _, tool in ipairs(table.clone(toDrop)) do
+			if not shouldKeep(tool.Name) and tool.Parent then
+				if hum and tool.Parent == char then pcall(function() hum:UnequipTools() end) end
+				local ok = pcall(function() tool.Parent = stashFolder end)
+				if ok then table.insert(OPT.fruitStash, tool); n += 1 end
 			end
-			busy = false
-			if dropBtn.Parent then
-				status.Text = failed and (tr("ทิ้งไม่ได้ที่") .. ": " .. failed .. " (" .. tr("เกมอาจไม่อนุญาตให้ทิ้ง") .. ")")
-					or (tr("ทิ้งแล้ว") .. " " .. dropped)
-				rebuild()
-				if failed then status.Text = tr("ทิ้งไม่ได้ที่") .. ": " .. failed .. " (" .. tr("เกมอาจไม่อนุญาตให้ทิ้ง") .. ")" end
+		end
+		status.Text = tr("ซ่อนแล้ว") .. " " .. n
+		rebuild()
+	end)
+
+	restoreBtn.MouseButton1Click:Connect(function()
+		local bp = player:FindFirstChildOfClass("Backpack")
+		local n = 0
+		for _, tool in ipairs(OPT.fruitStash) do
+			if tool and tool.Parent == stashFolder and bp then
+				pcall(function() tool.Parent = bp end)
+				n += 1
 			end
-		end)
+		end
+		table.clear(OPT.fruitStash)
+		status.Text = tr("คืนแล้ว") .. " " .. n
+		rebuild()
 	end)
 
 	rebuild()

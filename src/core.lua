@@ -116,7 +116,7 @@ local EN = {
 	["โหลดรายชื่อเพื่อนไม่ได้"] = "Could not load friends", ["เพื่อนที่อยู่ในเกม"] = "Friends in game",
 	["ป้องกันปลิว"] = "Anti-fling",
 	["ผลปีศาจ"] = "Devil fruits", ["ผลที่เก็บ (คั่นด้วย ,)"] = "Keep fruits (comma separated)", ["รีเฟรชรายการ"] = "Refresh list",
-	["ทิ้งผลที่ไม่เก็บ"] = "Drop unwanted fruits", ["เก็บ"] = "Keep", ["จะทิ้ง"] = "Drop",
+	["ทิ้งผลที่ไม่เก็บ"] = "Drop unwanted fruits", ["ซ่อนผลที่ไม่เก็บ"] = "Hide unwanted fruits", ["คืนผลที่ซ่อน"] = "Restore hidden", ["ไม่มีผลที่ต้องซ่อน"] = "Nothing to hide", ["กดอีกครั้งเพื่อยืนยันซ่อน"] = "Press again to confirm hiding", ["ซ่อนแล้ว"] = "Hidden", ["คืนแล้ว"] = "Restored", ["เก็บ"] = "Keep", ["จะทิ้ง"] = "Drop",
 	["ไม่พบผลปีศาจในกระเป๋า (หรือเกมเก็บไว้คนละที่)"] = "No devil fruits found in your backpack (or the game stores them elsewhere)",
 	["ไม่มีผลที่ต้องทิ้ง"] = "Nothing to drop", ["กดอีกครั้งเพื่อยืนยันทิ้ง"] = "Press again to confirm dropping",
 	["ทิ้งไม่ได้ที่"] = "Could not drop", ["เกมอาจไม่อนุญาตให้ทิ้ง"] = "game may not allow dropping", ["ทิ้งแล้ว"] = "Dropped",
